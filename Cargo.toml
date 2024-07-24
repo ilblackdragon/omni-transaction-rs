@@ -18,5 +18,7 @@ panic = "abort"
 overflow-checks = true
 
 [dependencies]
+rlp = "0.5.2"
+hex = "0.4.3"
 
 [dev-dependencies]

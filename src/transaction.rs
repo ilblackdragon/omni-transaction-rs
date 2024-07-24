@@ -1,5 +1,5 @@
-
 use crate::types::ChainKind;
+use crate::ethereum::{parse_eth_address, ethereum_transaction};
 
 // Multichain transaction builder.
 pub struct TransactionBuilder {
@@ -59,16 +59,53 @@ impl TransactionBuilder {
             }
             ChainKind::EVM { chain_id } => {
                 // Build an EVM transaction
-                vec![]
+                let to = parse_eth_address(self.receiver_id.unwrap().as_str());
+                ethereum_transaction(
+                    chain_id,
+                    0,
+                    self.gas_price.unwrap_or(1),
+                    1,
+                    self.gas_limit.unwrap_or(1),
+                    Some(to),
+                   // self.receiver_id.unwrap_or("".to_string()).parse().unwrap(),
+                    self.amount.unwrap_or(0),
+                    vec![],
+                    vec![],
+                )
             }
             ChainKind::Solana => {
                 // Build a Solana transaction
-                vec![]
+                unimplemented!()
             }
             ChainKind::Cosmos { chain_id } => {
                 // Build a Cosmos transaction
-                vec![]
+                unimplemented!()
             }
         }
      }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use hex;
+
+    #[test]
+    fn test_build_near_transaction() {
+        let tx = TransactionBuilder::new()
+            .receiver("alice.near".to_string())
+            .amount(100)
+            .build(ChainKind::NEAR);
+        assert_eq!(tx, vec![]);
+    }
+
+    #[test]
+    fn test_build_ethereum_transaction() {
+        let tx = TransactionBuilder::new()
+            .receiver("0123456789abcdefdeadbeef0123456789abcdef".to_string())
+            .amount(100)
+            .build(ChainKind::EVM { chain_id: 1 });
+        assert_eq!(hex::encode(tx), "02dd0180010101940123456789abcdefdeadbeef0123456789abcdef6480c0");
+    }
 }
