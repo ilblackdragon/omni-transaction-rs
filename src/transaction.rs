@@ -1,8 +1,10 @@
 use crate::types::ChainKind;
+use crate::near::{near_transaction};
 use crate::ethereum::{parse_eth_address, ethereum_transaction};
 
 // Multichain transaction builder.
 pub struct TransactionBuilder {
+    nonce: Option<u64>,
     receiver_id: Option<String>,
     amount: Option<u128>,
     bytecode: Option<Vec<u8>>,
@@ -13,12 +15,19 @@ pub struct TransactionBuilder {
 impl TransactionBuilder {
     pub fn new() -> Self {
         Self {
+            nonce: None,
             receiver_id: None,
             amount: None,
             bytecode: None,
             gas_price: None,
             gas_limit: None,
         }
+    }
+
+    /// Nonce of the transaction.
+    pub fn nonce(mut self, nonce: u64) -> Self {
+        self.nonce = Some(nonce);
+        self
     }
 
     /// Recevier of the transaction.
@@ -55,14 +64,19 @@ impl TransactionBuilder {
         match chain_kind {
             ChainKind::NEAR => {
                 // Build a NEAR transaction
-                vec![]
+                near_transaction(
+                    "alice.near".to_string(),
+                    [0u8; 64],
+                    self.nonce.unwrap_or(0),
+                    self.receiver_id.unwrap_or("".to_string()),
+                )
             }
             ChainKind::EVM { chain_id } => {
                 // Build an EVM transaction
                 let to = parse_eth_address(self.receiver_id.unwrap().as_str());
                 ethereum_transaction(
                     chain_id,
-                    0,
+                    self.nonce.unwrap_or(0).into(),
                     self.gas_price.unwrap_or(1),
                     1,
                     self.gas_limit.unwrap_or(1),
@@ -97,7 +111,7 @@ mod tests {
             .receiver("alice.near".to_string())
             .amount(100)
             .build(ChainKind::NEAR);
-        assert_eq!(tx, vec![]);
+        assert_eq!(hex::encode(tx), "0a000000616c6963652e6e656172010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000616c6963652e6e656172000000000000000000000000000000000000000000000000000000000000000000000000");
     }
 
     #[test]

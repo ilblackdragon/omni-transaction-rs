@@ -1,4 +1,4 @@
-use rlp::{Encodable, RlpStream};
+use rlp::RlpStream;
 use hex;
 
 type Address = [u8; 20];

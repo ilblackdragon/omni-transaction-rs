@@ -20,5 +20,8 @@ overflow-checks = true
 [dependencies]
 rlp = "0.5.2"
 hex = "0.4.3"
+borsh = "1.0.0"
+near-crypto = "0.23.0"
+near-primitives = "0.23.0"
 
 [dev-dependencies]
