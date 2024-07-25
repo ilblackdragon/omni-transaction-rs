@@ -5,6 +5,8 @@ use crate::ethereum::{parse_eth_address, ethereum_transaction};
 // Multichain transaction builder.
 pub struct TransactionBuilder {
     nonce: Option<u64>,
+    sender_id: Option<String>,
+    signer_public_key: Option<[u8; 64]>,
     receiver_id: Option<String>,
     amount: Option<u128>,
     bytecode: Option<Vec<u8>>,
@@ -16,6 +18,8 @@ impl TransactionBuilder {
     pub fn new() -> Self {
         Self {
             nonce: None,
+            sender_id: None,
+            signer_public_key: None,
             receiver_id: None,
             amount: None,
             bytecode: None,
@@ -27,6 +31,18 @@ impl TransactionBuilder {
     /// Nonce of the transaction.
     pub fn nonce(mut self, nonce: u64) -> Self {
         self.nonce = Some(nonce);
+        self
+    }
+
+    /// Sender of the transaction.
+    pub fn sender(mut self, sender_id: String) -> Self {
+        self.sender_id = Some(sender_id);
+        self
+    }
+
+    /// Sender's public key of the transaction.
+    pub fn signer_public_key(mut self, signer_public_key: [u8; 64]) -> Self {
+        self.signer_public_key = Some(signer_public_key);
         self
     }
 
@@ -60,13 +76,12 @@ impl TransactionBuilder {
 
     /// Build a transaction for the given chain into serialized payload.
     pub fn build(self, chain_kind: ChainKind) -> Vec<u8> {
-        // Build a transaction
         match chain_kind {
             ChainKind::NEAR => {
                 // Build a NEAR transaction
                 near_transaction(
-                    "alice.near".to_string(),
-                    [0u8; 64],
+                    self.sender_id.expect("Missing sender ID"),
+                    self.signer_public_key.expect("Missing signer public key"),
                     self.nonce.unwrap_or(0),
                     self.receiver_id.unwrap_or("".to_string()),
                 )
@@ -108,6 +123,8 @@ mod tests {
     #[test]
     fn test_build_near_transaction() {
         let tx = TransactionBuilder::new()
+            .sender("alice.near".to_string())
+            .signer_public_key([0u8; 64])
             .receiver("alice.near".to_string())
             .amount(100)
             .build(ChainKind::NEAR);
