@@ -2,5 +2,5 @@
 mod ethereum;
 mod near;
 
-mod transaction;
-mod types;
+pub mod transaction;
+pub mod types;

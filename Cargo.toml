@@ -1,5 +1,5 @@
 [package]
-name = "omni-transaction-rs"
+name = "omni-transaction"
 version = "0.1.0"
 authors = ["Pagoda <hello@pagoda.co>"]
 edition = "2021"
@@ -20,8 +20,9 @@ overflow-checks = true
 [dependencies]
 rlp = "0.5.2"
 hex = "0.4.3"
-borsh = "1.0.0"
-near-crypto = "0.23.0"
-near-primitives = "0.23.0"
+borsh = { version = "1.0.0", features = ["derive"] }
+near-primitives = { version = "0.23" }
+near-crypto = { version = "0.23" }
+near-sdk = "5.2.0"
 
 [dev-dependencies]

@@ -84,6 +84,7 @@ impl TransactionBuilder {
                     self.signer_public_key.expect("Missing signer public key"),
                     self.nonce.unwrap_or(0),
                     self.receiver_id.unwrap_or("".to_string()),
+                    vec![]
                 )
             }
             ChainKind::EVM { chain_id } => {
@@ -92,8 +93,8 @@ impl TransactionBuilder {
                 ethereum_transaction(
                     chain_id,
                     self.nonce.unwrap_or(0).into(),
-                    self.gas_price.unwrap_or(1),
                     1,
+                    self.gas_price.unwrap_or(1),
                     self.gas_limit.unwrap_or(1),
                     Some(to),
                    // self.receiver_id.unwrap_or("".to_string()).parse().unwrap(),

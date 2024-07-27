@@ -1,13 +1,12 @@
 
-use borsh;
-
 use near_primitives::account::id::AccountId;
-use near_primitives::transaction::Transaction;
+use near_primitives::transaction::{Transaction, Action};
 use near_crypto::PublicKey;
 use near_primitives::hash::CryptoHash;
+use near_sdk::borsh;
 
-pub fn near_transaction(signer_id: String, public_key: [u8; 64], nonce: u64, receiver_id: String) -> Vec<u8> {
-    let actions = vec![];
+
+pub fn near_transaction(signer_id: String, public_key: [u8; 64], nonce: u64, receiver_id: String, actions: Vec<Action>) -> Vec<u8> {
     let tx = Transaction {
         signer_id: AccountId::new_unvalidated(signer_id),
         public_key: PublicKey::SECP256K1(public_key.into()),
