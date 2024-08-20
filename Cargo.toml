@@ -21,9 +21,9 @@ overflow-checks = true
 rlp = "0.5.2"
 hex = "0.4.3"
 borsh = { version = "1.0.0", features = ["derive"] }
-near-primitives = { version = "0.23" }
-near-crypto = { version = "0.23" }
 near-sdk = "5.2.0"
+near-primitives = { version = "0.24.1" }
+near-crypto = { version = "0.24.1" }
 
 [dev-dependencies]
 alloy = { version = "0.2.1", features = ["full", "node-bindings", "rlp"] }

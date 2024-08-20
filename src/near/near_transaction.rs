@@ -1,6 +1,5 @@
 use near_crypto::PublicKey;
-use near_primitives::hash::CryptoHash;
-use near_primitives::transaction::Transaction;
+use near_primitives::{hash::CryptoHash, transaction::TransactionV0};
 use near_sdk::borsh;
 
 pub struct NearTransaction {
@@ -12,7 +11,7 @@ pub struct NearTransaction {
 
 impl NearTransaction {
     pub fn build_for_signing(&self) -> Vec<u8> {
-        let tx = Transaction {
+        let tx = TransactionV0 {
             signer_id: self.sender_id.parse().unwrap(),
             public_key: PublicKey::SECP256K1(self.signer_public_key.into()),
             nonce: self.nonce,

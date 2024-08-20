@@ -47,9 +47,7 @@ impl EVMTransaction {
 
         rlp_stream.finalize_unbounded_list();
 
-        let encoded_payload = rlp_stream.out().to_vec();
-
-        encoded_payload
+        rlp_stream.out().to_vec()
     }
 
     fn encode_fields(&self, rlp_stream: &mut RlpStream) {
@@ -141,7 +139,7 @@ mod tests {
             .with_max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)
             .with_max_fee_per_gas(MAX_FEE_PER_GAS)
             .with_gas_limit(GAS_LIMIT)
-            .with_input(data.clone());
+            .with_input(data);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
             .build_unsigned()
@@ -199,7 +197,7 @@ mod tests {
             .with_max_fee_per_gas(MAX_FEE_PER_GAS)
             .with_gas_limit(GAS_LIMIT)
             .access_list(AccessList::default())
-            .with_input(input.clone());
+            .with_input(input);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
             .build_unsigned()
@@ -245,7 +243,7 @@ mod tests {
         };
 
         let mut tx_encoded = vec![];
-        tx.clone().encode_for_signing(&mut tx_encoded);
+        tx.encode_for_signing(&mut tx_encoded);
 
         // Generate using EVMTransaction
         let tx_omni = EVMTransaction {
@@ -272,8 +270,7 @@ mod tests {
         .unwrap();
 
         let mut tx_encoded_with_signature: Vec<u8> = vec![];
-        tx.clone()
-            .encode_with_signature(&sig, &mut tx_encoded_with_signature, false);
+        tx.encode_with_signature(&sig, &mut tx_encoded_with_signature, false);
 
         let signature: OmniSignature = OmniSignature {
             v: sig.v().to_u64(),

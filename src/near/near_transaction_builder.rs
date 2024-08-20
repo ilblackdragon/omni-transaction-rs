@@ -10,7 +10,7 @@ pub struct NearTransactionBuilder {
 
 impl Default for NearTransactionBuilder {
     fn default() -> Self {
-        NearTransactionBuilder::new()
+        Self::new()
     }
 }
 
@@ -26,7 +26,7 @@ impl TxBuilder<NearTransaction> for NearTransactionBuilder {
 }
 
 impl NearTransactionBuilder {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Self {
             nonce: None,
             sender_id: None,
@@ -35,7 +35,7 @@ impl NearTransactionBuilder {
         }
     }
 
-    pub fn nonce(mut self, nonce: u64) -> Self {
+    pub const fn nonce(mut self, nonce: u64) -> Self {
         self.nonce = Some(nonce);
         self
     }
@@ -45,7 +45,7 @@ impl NearTransactionBuilder {
         self
     }
 
-    pub fn signer_public_key(mut self, signer_public_key: [u8; 64]) -> Self {
+    pub const fn signer_public_key(mut self, signer_public_key: [u8; 64]) -> Self {
         self.signer_public_key = Some(signer_public_key);
         self
     }

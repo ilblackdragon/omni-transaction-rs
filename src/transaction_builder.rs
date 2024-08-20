@@ -5,6 +5,7 @@ pub trait TxBuilder<T> {
 pub struct TransactionBuilder;
 
 impl TransactionBuilder {
+    #[allow(clippy::new_ret_no_self)]
     pub fn new<T>() -> T
     where
         T: Default,
@@ -54,7 +55,7 @@ mod tests {
         let data: Vec<u8> = vec![];
         let chain_id = 1;
         let to_address_str = "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
-        let to_address = Some(parse_eth_address(to_address_str));
+        let to_address = parse_eth_address(to_address_str);
 
         let tx = OmniTransactionBuilder::new::<EVM>()
             .chain_id(chain_id)
@@ -62,7 +63,7 @@ mod tests {
             .max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)
             .max_fee_per_gas(MAX_FEE_PER_GAS)
             .gas_limit(GAS_LIMIT)
-            .to(to_address.unwrap())
+            .to(to_address)
             .value(value)
             .input(data.clone())
             .access_list(vec![])
@@ -79,7 +80,7 @@ mod tests {
             .with_max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)
             .with_max_fee_per_gas(MAX_FEE_PER_GAS)
             .with_gas_limit(GAS_LIMIT)
-            .with_input(data.clone());
+            .with_input(data);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
             .build_unsigned()
