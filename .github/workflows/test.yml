@@ -16,3 +16,43 @@ jobs:
     - uses: actions/checkout@v4
     - name: Run clippy
       run: cargo clippy --all-targets -- -D clippy::all -D clippy::nursery
+
+  cargo-fmt:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Run cargo fmt
+      run: cargo fmt --check
+
+  cargo-doc:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: run cargo doc
+      run: RUSTDOCFLAGS="-D warnings" cargo doc
+
+  test:
+    needs: cargo-fmt
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable]
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: "${{ matrix.toolchain }}"
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: ${{ matrix.toolchain }}
+        default: true
+    - uses: Swatinem/rust-cache@v1
+    - name: Add wasm32 target
+      run: rustup target add wasm32-unknown-unknown
+    - name: Check with stable features
+      run: cargo check --verbose
+    - name: Run tests with unstable features
+      run: NEAR_RPC_TIMEOUT_SECS=100 cargo test --verbose --features unstable
