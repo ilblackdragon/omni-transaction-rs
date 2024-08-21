@@ -8,11 +8,12 @@ use alloy_primitives::{keccak256, U256};
 use eyre::Result;
 use std::result::Result::Ok;
 
+use omni_transaction::evm::types::Signature as OmniSignature;
 use omni_transaction::evm::utils::parse_eth_address;
 use omni_transaction::transaction_builder::{
     TransactionBuilder as OmniTransactionBuilder, TxBuilder,
 };
-use omni_transaction::types::{Signature as OmniSignature, EVM};
+use omni_transaction::types::EVM;
 
 const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
 const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
