@@ -22,13 +22,17 @@ rlp = "0.5.2"
 hex = "0.4.3"
 borsh = { version = "1.0.0", features = ["derive"] }
 near-sdk = "5.2.0"
-near-primitives = { version = "0.24.1" }
-near-crypto = { version = "0.24.1" }
+
 
 [dev-dependencies]
+# ethereum
 alloy = { version = "0.2.1", features = ["full", "node-bindings", "rlp"] }
 alloy-rlp = { version = "0.3.8", features = ["derive"] }
 alloy-primitives = { version = "0.7.7" }
+
+# near
+near-primitives = { version = "0.24.1" }
+near-crypto = { version = "0.24.1" }
 
 # async
 tokio = { version = "1.38", features = ["full"] }
