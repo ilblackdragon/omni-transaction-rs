@@ -29,6 +29,35 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-just
       - run: RUSTDOCFLAGS="-D warnings" cargo doc
+  
+  build:
+    needs: [clippy, cargo-fmt] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - run: just check
+
+  build-wasm:
+    needs: [clippy, cargo-fmt] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Check for WASM target
+        run: just check-wasm
 
   test:
     needs: [clippy, cargo-fmt] 
@@ -37,23 +66,10 @@ jobs:
         platform: [ubuntu-latest, macos-latest]
         toolchain: [stable, nightly]
     runs-on: ${{ matrix.platform }}
-
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-just
-      - name: "${{ matrix.toolchain }}"
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.toolchain }}
-          default: true
+      - uses: ./.github/actions/setup-rust
       - uses: foundry-rs/foundry-toolchain@v1
-      - uses: Swatinem/rust-cache@v1
-      - name: Add wasm32 target
-        run: rustup target add wasm32-unknown-unknown
-      - name: Check with stable features
-        run: just check
-      - name: Check for WASM target
-        run: just check-wasm
       - name: Run tests
         run: just test
