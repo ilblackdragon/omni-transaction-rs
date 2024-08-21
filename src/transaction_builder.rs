@@ -18,6 +18,9 @@ impl TransactionBuilder {
 mod tests {
 
     use super::{TransactionBuilder as OmniTransactionBuilder, TxBuilder};
+    use crate::near::types::{
+        Action as OmniAction, PublicKey as OmniPublicKey, TransferAction as OmniTransferAction,
+    };
     use crate::{
         evm::utils::parse_eth_address,
         types::{EVM, NEAR},
@@ -25,22 +28,48 @@ mod tests {
     use alloy::{
         consensus::SignableTransaction,
         network::TransactionBuilder,
-        primitives::{address, hex, Address, U256},
+        primitives::{address, Address, U256},
         rpc::types::TransactionRequest,
+    };
+    use near_crypto::PublicKey;
+    use near_primitives::{
+        action::Action, action::TransferAction, hash::CryptoHash, transaction::TransactionV0,
     };
 
     #[test]
     fn test_near_transaction_builder_typed() {
-        let near_transaction = OmniTransactionBuilder::new::<NEAR>()
-            .nonce(0)
-            .sender_id("alice.near".to_string())
-            .signer_public_key([0u8; 64])
-            .receiver_id("alice.near".to_string())
+        let signer_id = "alice.near";
+        let signer_public_key = [0u8; 64];
+        let nonce = 0;
+        let receiver_id: &str = "bob.near";
+        let block_hash = [0u8; 32];
+        let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: 1u128 });
+        let omni_actions = vec![transfer_action];
+        let actions = Action::Transfer(TransferAction { deposit: 1u128 });
+
+        let omni_near_transaction = OmniTransactionBuilder::new::<NEAR>()
+            .signer_id(signer_id.to_string())
+            .signer_public_key(OmniPublicKey::SECP256K1(signer_public_key.into()))
+            .nonce(nonce)
+            .receiver_id(receiver_id.to_string())
+            .block_hash(block_hash)
+            .actions(omni_actions)
             .build();
 
-        let tx_encoded = near_transaction.build_for_signing();
+        let omni_tx_encoded = omni_near_transaction.build_for_signing();
 
-        assert_eq!(hex::encode(tx_encoded), "0a000000616c6963652e6e656172010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a000000616c6963652e6e656172000000000000000000000000000000000000000000000000000000000000000000000000");
+        let v0_tx: TransactionV0 = TransactionV0 {
+            signer_id: signer_id.parse().unwrap(),
+            public_key: PublicKey::SECP256K1(signer_public_key.into()),
+            nonce: nonce,
+            receiver_id: receiver_id.parse().unwrap(),
+            block_hash: CryptoHash([0; 32]),
+            actions: vec![actions],
+        };
+
+        let serialized_v0_tx = borsh::to_vec(&v0_tx).expect("failed to serialize NEAR transaction");
+
+        assert!(serialized_v0_tx == omni_tx_encoded);
     }
 
     #[test]
