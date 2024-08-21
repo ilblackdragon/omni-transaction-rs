@@ -13,21 +13,21 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-just.yml
+      - uses: ./.github/actions/install-just
       - run: just lint
 
   cargo-fmt:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-just.yml
+      - uses: ./.github/actions/install-just
       - run: just fmt
 
   cargo-doc:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-just.yml
+      - uses: ./.github/actions/install-just
       - run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   test:
@@ -40,7 +40,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-just.yml
+      - uses: ./.github/actions/install-just
       - name: "${{ matrix.toolchain }}"
         uses: actions-rs/toolchain@v1
         with:
