@@ -1,9 +1,9 @@
-use crate::{
-    transaction_builder::TxBuilder,
+use crate::transaction_builder::TxBuilder;
+
+use super::{
+    evm_transaction::EVMTransaction,
     types::{AccessList, Address},
 };
-
-use super::evm_transaction::EVMTransaction;
 
 pub struct EVMTransactionBuilder {
     chain_id: Option<u64>,
