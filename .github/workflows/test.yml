@@ -59,7 +59,7 @@ jobs:
       - name: Check for WASM target
         run: just check-wasm
 
-  test:
+  unit-tests:
     needs: [build, build-wasm] 
     strategy:
       matrix:
@@ -71,5 +71,20 @@ jobs:
       - uses: ./.github/actions/install-just
       - uses: ./.github/actions/setup-rust
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: Run tests
-        run: just test
+      - name: Run unit tests
+        run: just test-unit
+
+  integration-tests:
+    needs: [build, build-wasm] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Run unit tests
+        run: just test-integration

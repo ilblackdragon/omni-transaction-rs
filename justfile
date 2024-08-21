@@ -14,8 +14,10 @@ check:
 check-wasm:
     cargo check --target wasm32-unknown-unknown
     
-# Run tests
-test:
-    NEAR_RPC_TIMEOUT_SECS=100 cargo test
+# Run unit tests
+test-unit:
+    cargo test --lib
 
-# 
+# Run integration tests
+test-integration:
+    cargo test --test '*'
