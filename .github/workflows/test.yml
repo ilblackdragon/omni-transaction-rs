@@ -54,6 +54,6 @@ jobs:
     - name: Add wasm32 target
       run: rustup target add wasm32-unknown-unknown
     - name: Check with stable features
-      run: cargo check --verbose
+      run: cargo check
     - name: Run tests
-      run: NEAR_RPC_TIMEOUT_SECS=100 cargo test --verbose
+      run: NEAR_RPC_TIMEOUT_SECS=100 cargo test
