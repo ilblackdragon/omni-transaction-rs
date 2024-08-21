@@ -1,9 +1,8 @@
 use rlp::RlpStream;
 
-use crate::{
-    constants::EIP_1559_TYPE,
-    types::{AccessList, Address, Signature},
-};
+use crate::constants::EIP_1559_TYPE;
+
+use super::types::{AccessList, Address, Signature};
 
 pub struct EVMTransaction {
     pub chain_id: u64,
@@ -94,8 +93,8 @@ mod tests {
     };
     use alloy_primitives::{b256, Signature};
 
+    use crate::evm::types::Signature as OmniSignature;
     use crate::evm::{evm_transaction::EVMTransaction, utils::parse_eth_address};
-    use crate::types::Signature as OmniSignature;
     const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
     const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
     const GAS_LIMIT: u128 = 21_000;
