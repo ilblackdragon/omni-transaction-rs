@@ -7,18 +7,23 @@ use borsh::BorshSerialize;
 // Actions
 #[derive(Debug, Clone, BorshSerialize)]
 pub enum Action {
+    /// Create an (sub)account using a transaction `receiver_id` as an ID for
+    /// a new account ID must pass validation rules described here
+    /// <http://nomicon.io/Primitives/Account.html>.
     CreateAccount(CreateAccountAction),
+    /// Sets a Wasm code to a receiver_id
     DeployContract(DeployContractAction),
     FunctionCall(Box<FunctionCallAction>),
     Transfer(TransferAction),
+    Stake(Box<StakeAction>),
 }
 
 #[derive(Debug, Clone, BorshSerialize)]
 pub struct CreateAccountAction {}
 
 #[derive(Debug, Clone, BorshSerialize)]
-pub struct TransferAction {
-    pub deposit: u128,
+pub struct DeployContractAction {
+    pub code: Vec<u8>,
 }
 
 #[derive(Debug, Clone, BorshSerialize)]
@@ -30,9 +35,19 @@ pub struct FunctionCallAction {
 }
 
 #[derive(Debug, Clone, BorshSerialize)]
-pub struct DeployContractAction {
-    pub code: Vec<u8>,
+pub struct TransferAction {
+    pub deposit: u128,
 }
+
+#[derive(Debug, Clone, BorshSerialize)]
+pub struct StakeAction {
+    /// Amount of tokens to stake.
+    pub stake: u128,
+    /// Validator key which will be used to sign transactions on behalf of signer_id
+    pub public_key: PublicKey,
+}
+
+// Public Key
 
 #[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub struct Secp256K1PublicKey([u8; SECP256K1_PUBLIC_KEY_LENGTH]);
