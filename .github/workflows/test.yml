@@ -49,6 +49,7 @@ jobs:
         profile: minimal
         toolchain: ${{ matrix.toolchain }}
         default: true
+    - uses: foundry-rs/foundry-toolchain@v1
     - uses: Swatinem/rust-cache@v1
     - name: Add wasm32 target
       run: rustup target add wasm32-unknown-unknown
