@@ -124,7 +124,7 @@ mod tests {
         let v0_tx: TransactionV0 = TransactionV0 {
             signer_id: signer_id.parse().unwrap(),
             public_key: PublicKey::SECP256K1(signer_public_key.into()),
-            nonce: nonce,
+            nonce,
             receiver_id: receiver_id.parse().unwrap(),
             block_hash: CryptoHash([0; 32]),
             actions: vec![actions],

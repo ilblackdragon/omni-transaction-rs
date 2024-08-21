@@ -23,7 +23,7 @@ pub struct NearTransaction {
 
 impl NearTransaction {
     pub fn build_for_signing(&self) -> Vec<u8> {
-        let tx = NearTransaction {
+        let tx = Self {
             signer_id: self.signer_id.clone(),
             signer_public_key: self.signer_public_key.clone(),
             nonce: self.nonce,
@@ -58,7 +58,7 @@ mod tests {
         let v0_tx: TransactionV0 = TransactionV0 {
             signer_id: signer_id.parse().unwrap(),
             public_key: PublicKey::SECP256K1(signer_public_key.into()),
-            nonce: nonce,
+            nonce,
             receiver_id: receiver_id.parse().unwrap(),
             block_hash: CryptoHash([0; 32]),
             actions: vec![actions],
@@ -69,7 +69,7 @@ mod tests {
         let omni_tx = NearTransaction {
             signer_id: signer_id.parse().unwrap(),
             signer_public_key: OmniPublicKey::SECP256K1(signer_public_key.into()),
-            nonce: nonce,
+            nonce,
             receiver_id: receiver_id.parse().unwrap(),
             block_hash: [0u8; 32],
             actions: vec![omni_actions],

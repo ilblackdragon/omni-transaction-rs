@@ -66,11 +66,11 @@ pub enum PublicKey {
 impl BorshSerialize for PublicKey {
     fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
         match self {
-            PublicKey::ED25519(public_key) => {
+            Self::ED25519(public_key) => {
                 BorshSerialize::serialize(&0u8, writer)?;
                 writer.write_all(&public_key.0)?;
             }
-            PublicKey::SECP256K1(public_key) => {
+            Self::SECP256K1(public_key) => {
                 BorshSerialize::serialize(&1u8, writer)?;
                 writer.write_all(&public_key.0)?;
             }
@@ -81,6 +81,6 @@ impl BorshSerialize for PublicKey {
 
 impl From<[u8; 64]> for Secp256K1PublicKey {
     fn from(data: [u8; 64]) -> Self {
-        Secp256K1PublicKey(data)
+        Self(data)
     }
 }
