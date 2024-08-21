@@ -9,59 +9,38 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  setup-just:
-    runs-on: ubuntu-20.04
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Install just
-        uses: taiki-e/install-action@v2
-        with:
-          tool: just
-    
-      - name: Add Just to PATH
-        run: echo "${HOME}/.cargo/bin" >> $GITHUB_PATH
-
-      - name: Verify Just Installation
-        run: just --version
-
   clippy:
     runs-on: ubuntu-20.04
-    needs: setup-just
-
     steps:
       - uses: actions/checkout@v4
-      - name: Run lint
-        run: just lint
+      - uses: ./.github/actions/install-just.yml
+      - run: just lint
 
   cargo-fmt:
     runs-on: ubuntu-20.04
-    needs: setup-just
-
     steps:
       - uses: actions/checkout@v4
-      - name: Run fmt
-        run: just fmt
+      - uses: ./.github/actions/install-just.yml
+      - run: just fmt
 
   cargo-doc:
     runs-on: ubuntu-20.04
-    needs: setup-just
-
     steps:
       - uses: actions/checkout@v4
-      - name: Run cargo doc
-        run: RUSTDOCFLAGS="-D warnings" cargo doc
+      - uses: ./.github/actions/install-just.yml
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   test:
-    needs: [setup-just, cargo-fmt] 
+    needs: [clippy, cargo-fmt] 
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
-        toolchain: [stable]
+        toolchain: [stable, nightly]
     runs-on: ${{ matrix.platform }}
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just.yml
       - name: "${{ matrix.toolchain }}"
         uses: actions-rs/toolchain@v1
         with:
