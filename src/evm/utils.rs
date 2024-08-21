@@ -1,6 +1,6 @@
 use hex;
 
-use crate::types::Address;
+use super::types::Address;
 
 pub fn parse_eth_address(address: &str) -> Address {
     let address = hex::decode(address).expect("address should be hex");

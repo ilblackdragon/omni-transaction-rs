@@ -1,0 +1,90 @@
+name: Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  clippy:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - run: just lint
+
+  cargo-fmt:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - run: just fmt
+
+  cargo-doc:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc
+  
+  build:
+    needs: [clippy, cargo-fmt, cargo-doc] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - run: just check
+
+  build-wasm:
+    needs: [clippy, cargo-fmt, cargo-doc] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Check for WASM target
+        run: just check-wasm
+
+  unit-tests:
+    needs: [build, build-wasm] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Run unit tests
+        run: just test-unit
+
+  integration-tests:
+    needs: [build, build-wasm] 
+    strategy:
+      matrix:
+        platform: [ubuntu-latest, macos-latest]
+        toolchain: [stable, nightly]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-just
+      - uses: ./.github/actions/setup-rust
+      - uses: foundry-rs/foundry-toolchain@v1
+      - name: Run unit tests
+        run: just test-integration

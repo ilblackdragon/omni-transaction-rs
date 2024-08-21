@@ -8,11 +8,12 @@ use alloy_primitives::{keccak256, U256};
 use eyre::Result;
 use std::result::Result::Ok;
 
+use omni_transaction::evm::types::Signature as OmniSignature;
 use omni_transaction::evm::utils::parse_eth_address;
 use omni_transaction::transaction_builder::{
     TransactionBuilder as OmniTransactionBuilder, TxBuilder,
 };
-use omni_transaction::types::{Signature as OmniSignature, EVM};
+use omni_transaction::types::EVM;
 
 const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
 const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
@@ -22,7 +23,7 @@ const GAS_LIMIT: u128 = 21_000;
 async fn test_send_raw_transaction_created_with_omnitransactionbuilder() -> Result<()> {
     let nonce: u64 = 0;
     let to_address_str = "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
-    let to_address = Some(parse_eth_address(to_address_str));
+    let to_address = parse_eth_address(to_address_str);
     let value_as_128 = 10000000000000000u128; // 0.01 ETH
     let value = U256::from(value_as_128);
     let data: Vec<u8> = vec![];
@@ -50,7 +51,7 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder() -> Resu
     // Build the transaction using OmniTransactionBuilder
     let omni_evm_tx = OmniTransactionBuilder::new::<EVM>()
         .nonce(nonce)
-        .to(to_address.unwrap())
+        .to(to_address)
         .value(value_as_128)
         .input(data.clone())
         .max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)

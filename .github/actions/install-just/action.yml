@@ -1,0 +1,21 @@
+name: 'Install Just'
+description: 'Installs Just command runner with caching'
+runs:
+  using: "composite"
+  steps:
+    - name: Cache Just
+      uses: actions/cache@v4
+      id: cache-just
+      with:
+        path: ~/.cargo/bin/just
+        key: ${{ runner.os }}-just-${{ hashFiles('**/justfile') }}
+    
+    - name: Install Just
+      if: steps.cache-just.outputs.cache-hit != 'true'
+      uses: taiki-e/install-action@v2
+      with:
+        tool: just
+    
+    - name: Verify Just Installation
+      run: just --version
+      shell: bash
