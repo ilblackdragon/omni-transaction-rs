@@ -47,7 +47,7 @@ mod tests {
     };
 
     #[test]
-    fn test_build_for_signing_for_near() {
+    fn test_build_for_signing_for_near_against_near_primitives() {
         let signer_id = "alice.near";
         let signer_public_key = [0u8; 64];
         let nonce = 0;
