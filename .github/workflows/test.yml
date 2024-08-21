@@ -9,32 +9,47 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  setup-just:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: extractions/setup-just@v1
+        with:
+          just-version: 1.5.0
+
+      - name: Verify Just Installation
+        run: just --version
+
   clippy:
     runs-on: ubuntu-20.04
+    needs: setup-just
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Run clippy
-      run: cargo clippy --all-targets -- -D clippy::all -D clippy::nursery
+      - uses: actions/checkout@v4
+      - name: Run lint
+        run: just lint
 
   cargo-fmt:
     runs-on: ubuntu-20.04
+    needs: setup-just
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Run cargo fmt
-      run: cargo fmt --check
+      - uses: actions/checkout@v4
+      - name: Run fmt
+        run: just fmt
 
   cargo-doc:
     runs-on: ubuntu-20.04
+    needs: setup-just
 
     steps:
-    - uses: actions/checkout@v4
-    - name: run cargo doc
-      run: RUSTDOCFLAGS="-D warnings" cargo doc
+      - uses: actions/checkout@v4
+      - name: Run cargo doc
+        run: RUSTDOCFLAGS="-D warnings" cargo doc
 
   test:
-    needs: cargo-fmt
+    needs: [setup-just, cargo-fmt] 
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
@@ -42,18 +57,18 @@ jobs:
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v2
-    - name: "${{ matrix.toolchain }}"
-      uses: actions-rs/toolchain@v1
-      with:
-        profile: minimal
-        toolchain: ${{ matrix.toolchain }}
-        default: true
-    - uses: foundry-rs/foundry-toolchain@v1
-    - uses: Swatinem/rust-cache@v1
-    - name: Add wasm32 target
-      run: rustup target add wasm32-unknown-unknown
-    - name: Check with stable features
-      run: cargo check
-    - name: Run tests
-      run: NEAR_RPC_TIMEOUT_SECS=100 cargo test
+      - uses: actions/checkout@v2
+      - name: "${{ matrix.toolchain }}"
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.toolchain }}
+          default: true
+      - uses: foundry-rs/foundry-toolchain@v1
+      - uses: Swatinem/rust-cache@v1
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Check with stable features
+        run: just check
+      - name: Run tests
+        run: just test
