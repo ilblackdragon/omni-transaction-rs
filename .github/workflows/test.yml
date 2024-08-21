@@ -53,5 +53,7 @@ jobs:
         run: rustup target add wasm32-unknown-unknown
       - name: Check with stable features
         run: just check
+      - name: Check for WASM target
+        run: just check-wasm
       - name: Run tests
         run: just test
