@@ -1,11 +1,14 @@
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
+use near_sdk::serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 
 use std::io::{Error, Write};
 
 use borsh::BorshSerialize;
 
 // Actions
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub enum Action {
     /// Create an (sub)account using a transaction `receiver_id` as an ID for
     /// a new account ID must pass validation rules described here
@@ -18,15 +21,18 @@ pub enum Action {
     Stake(Box<StakeAction>),
 }
 
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct CreateAccountAction {}
 
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct DeployContractAction {
     pub code: Vec<u8>,
 }
 
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct FunctionCallAction {
     pub method_name: String,
     pub args: Vec<u8>,
@@ -34,12 +40,14 @@ pub struct FunctionCallAction {
     pub deposit: u128,
 }
 
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct TransferAction {
     pub deposit: u128,
 }
 
-#[derive(Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct StakeAction {
     /// Amount of tokens to stake.
     pub stake: u128,
@@ -49,13 +57,16 @@ pub struct StakeAction {
 
 // Public Key
 
-#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
-pub struct Secp256K1PublicKey([u8; SECP256K1_PUBLIC_KEY_LENGTH]);
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Secp256K1PublicKey(#[serde(with = "BigArray")] pub [u8; SECP256K1_PUBLIC_KEY_LENGTH]);
 
-#[derive(Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
+#[serde(crate = "near_sdk::serde")]
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[serde(crate = "near_sdk::serde")]
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
     ED25519(ED25519PublicKey),

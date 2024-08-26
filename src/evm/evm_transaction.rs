@@ -1,9 +1,12 @@
+use near_sdk::serde::{Deserialize, Serialize};
 use rlp::RlpStream;
 
 use crate::constants::EIP_1559_TYPE;
 
 use super::types::{AccessList, Address, Signature};
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct EVMTransaction {
     pub chain_id: u64,
     pub nonce: u64,
