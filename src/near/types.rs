@@ -19,6 +19,7 @@ pub enum Action {
     FunctionCall(Box<FunctionCallAction>),
     Transfer(TransferAction),
     Stake(Box<StakeAction>),
+    AddKey(Box<AddKeyAction>),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
@@ -53,6 +54,45 @@ pub struct StakeAction {
     pub stake: u128,
     /// Validator key which will be used to sign transactions on behalf of signer_id
     pub public_key: PublicKey,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct AddKeyAction {
+    /// A public key which will be associated with an access_key
+    pub public_key: PublicKey,
+    /// An access key with the permission
+    pub access_key: AccessKey,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct AccessKey {
+    /// Nonce for this access key, used for tx nonce generation. When access key is created, nonce
+    /// is set to `(block_height - 1) * 1e6` to avoid tx hash collision on access key re-creation.
+    /// See <https://github.com/near/nearcore/issues/3779> for more details.
+    pub nonce: u64,
+
+    /// Defines permissions for this access key.
+    pub permission: AccessKeyPermission,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub enum AccessKeyPermission {
+    FunctionCall(FunctionCallPermission),
+
+    /// Grants full access to the account.
+    /// NOTE: It's used to replace account-level public keys.
+    FullAccess,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct FunctionCallPermission {
+    pub allowance: Option<u128>,
+    pub receiver_id: String,
+    pub method_names: Vec<String>,
 }
 
 // Public Key
