@@ -4,7 +4,7 @@ pub type Address = [u8; 20];
 
 pub type AccessList = Vec<(Address, Vec<[u8; 32]>)>;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct Signature {
     pub v: u64,
