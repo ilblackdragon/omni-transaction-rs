@@ -135,3 +135,9 @@ impl From<[u8; 64]> for Secp256K1PublicKey {
         Self(data)
     }
 }
+
+impl From<[u8; 32]> for ED25519PublicKey {
+    fn from(data: [u8; 32]) -> Self {
+        Self(data)
+    }
+}

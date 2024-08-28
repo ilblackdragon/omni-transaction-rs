@@ -41,11 +41,16 @@ impl NearTransaction {
 mod tests {
     use super::*;
     use crate::near::types::{
-        Action as OmniAction, PublicKey as OmniPublicKey, TransferAction as OmniTransferAction,
+        AccessKey as OmniAccessKey, AccessKeyPermission as OmniAccessKeyPermission,
+        Action as OmniAction, AddKeyAction as OmniAddKeyAction, PublicKey as OmniPublicKey,
+        TransferAction as OmniTransferAction,
     };
     use near_crypto::PublicKey;
     use near_primitives::{
-        action::Action, action::TransferAction, hash::CryptoHash, transaction::TransactionV0,
+        account::{AccessKey, AccessKeyPermission},
+        action::{Action, AddKeyAction, TransferAction},
+        hash::CryptoHash,
+        transaction::TransactionV0,
     };
 
     #[test]
@@ -78,6 +83,70 @@ mod tests {
         };
 
         let serialized_omni_tx = omni_tx.build_for_signing();
+
+        assert!(serialized_v0_tx == serialized_omni_tx);
+    }
+
+    #[test]
+    fn test_build_for_signing_for_near_against_near_primitives_2() {
+        let signer_id = "forgetful-parent.testnet";
+        let signer_public_key = "6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"; // ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp
+        let signer_public_key_as_bytes: [u8; 32] = bs58::decode(signer_public_key)
+            .into_vec()
+            .expect("Decoding failed")
+            .try_into()
+            .expect("Invalid length, expected 32 bytes");
+
+        let nonce = 1;
+        let receiver_id: &str = "forgetful-parent.testnet";
+        let transfer_action = Action::Transfer(TransferAction { deposit: 1u128 });
+        let transfer_action_omni = OmniAction::Transfer(OmniTransferAction { deposit: 1u128 });
+        let add_key_action_omni = OmniAction::AddKey(Box::new(OmniAddKeyAction {
+            public_key: OmniPublicKey::ED25519(signer_public_key_as_bytes.into()),
+            access_key: OmniAccessKey {
+                nonce: 0,
+                permission: OmniAccessKeyPermission::FullAccess,
+            },
+        }));
+        let add_key_action = Action::AddKey(Box::new(AddKeyAction {
+            public_key: PublicKey::ED25519(signer_public_key_as_bytes.into()),
+            access_key: AccessKey {
+                nonce: 0,
+                permission: AccessKeyPermission::FullAccess,
+            },
+        }));
+
+        let block_hash = "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ";
+        let block_hash_as_bytes: [u8; 32] = bs58::decode(block_hash)
+            .into_vec()
+            .expect("Decoding failed")
+            .try_into()
+            .expect("Invalid length, expected 32 bytes");
+
+        let v0_tx: TransactionV0 = TransactionV0 {
+            signer_id: signer_id.parse().unwrap(),
+            public_key: PublicKey::ED25519(signer_public_key_as_bytes.into()),
+            nonce,
+            receiver_id: receiver_id.parse().unwrap(),
+            block_hash: CryptoHash(block_hash_as_bytes),
+            actions: vec![transfer_action, add_key_action],
+        };
+
+        let serialized_v0_tx = borsh::to_vec(&v0_tx).expect("failed to serialize NEAR transaction");
+
+        let omni_tx = NearTransaction {
+            signer_id: signer_id.parse().unwrap(),
+            signer_public_key: OmniPublicKey::ED25519(signer_public_key_as_bytes.into()),
+            nonce,
+            receiver_id: receiver_id.parse().unwrap(),
+            block_hash: block_hash_as_bytes,
+            actions: vec![transfer_action_omni, add_key_action_omni],
+        };
+
+        let serialized_omni_tx = omni_tx.build_for_signing();
+
+        println!("serialized_v0_tx: {:?}", serialized_v0_tx);
+        println!("serialized_omni_tx: {:?}", serialized_omni_tx);
 
         assert!(serialized_v0_tx == serialized_omni_tx);
     }
