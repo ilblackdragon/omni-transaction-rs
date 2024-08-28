@@ -21,8 +21,23 @@ overflow-checks = true
 rlp = "0.5.2"
 hex = "0.4.3"
 borsh = { version = "1.0.0", features = ["derive"] }
-near-primitives = { version = "0.23" }
-near-crypto = { version = "0.23" }
 near-sdk = "5.2.0"
 
+
 [dev-dependencies]
+# ethereum
+alloy = { version = "0.2.1", features = ["full", "node-bindings", "rlp"] }
+alloy-rlp = { version = "0.3.8", features = ["derive"] }
+alloy-primitives = { version = "0.7.7" }
+
+# near
+near-primitives = { version = "0.24.1" }
+near-crypto = { version = "0.24.1" }
+
+# async
+tokio = { version = "1.38", features = ["full"] }
+
+# misc
+eyre = "0.6"
+serde = "1.0"
+serde_json = "1.0"

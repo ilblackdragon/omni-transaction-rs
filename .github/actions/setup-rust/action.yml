@@ -1,0 +1,12 @@
+name: "Setup Rust Environment"
+description: "Setup Rust environment with caching"
+runs:
+  using: "composite"
+  steps:
+    - name: "${{ matrix.toolchain }}"
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ matrix.toolchain }}
+    - uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
