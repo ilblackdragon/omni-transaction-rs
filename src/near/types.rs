@@ -1,5 +1,5 @@
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
-use near_sdk::serde::{Deserialize, Serialize};
+use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use serde_big_array::BigArray;
 
 use std::io::{Error, Write};
@@ -105,7 +105,7 @@ pub struct Secp256K1PublicKey(#[serde(with = "BigArray")] pub [u8; SECP256K1_PUB
 #[serde(crate = "near_sdk::serde")]
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Serialize, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
@@ -140,4 +140,34 @@ impl From<[u8; 32]> for ED25519PublicKey {
     fn from(data: [u8; 32]) -> Self {
         Self(data)
     }
+}
+
+fn split_key_type_data(value: &str) -> (&str, &str) {
+    value.split_once(':').unwrap()
+}
+
+impl<'de> Deserialize<'de> for PublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let str: &str = Deserialize::deserialize(deserializer)?;
+        let (key_type, key_data) = split_key_type_data(&str);
+        Ok(match key_type {
+            "ed25519" => PublicKey::ED25519(ED25519PublicKey(vec_to_fixed(
+                bs58::decode(key_data).into_vec().unwrap(),
+            ))),
+            "secp256k1" => PublicKey::SECP256K1(Secp256K1PublicKey(vec_to_fixed(
+                bs58::decode(key_data).into_vec().unwrap(),
+            ))),
+            _ => PublicKey::ED25519(ED25519PublicKey(vec_to_fixed(
+                bs58::decode(key_data).into_vec().unwrap(),
+            ))),
+        })
+    }
+}
+
+fn vec_to_fixed<T, const N: usize>(v: Vec<T>) -> [T; N] {
+    v.try_into()
+        .unwrap_or_else(|v: Vec<T>| panic!("Expected a Vec of length {} but it was {}", N, v.len()))
 }
