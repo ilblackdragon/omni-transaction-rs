@@ -7,17 +7,17 @@ use super::types::{ED25519PublicKey, PublicKey, Secp256K1PublicKey};
 
 /// Trait to extend `&str` with methods for parsing public keys and block hashes.
 pub trait PublicKeyStrExt {
+    /// Converts a string in base58 into a 64-byte array.
+    fn to_fixed_64_bytes(&self) -> Result<[u8; 64], String>;
+
+    /// Converts a string in base58 into a 32-byte array.
+    fn to_fixed_32_bytes(&self) -> Result<[u8; 32], String>;
+
     /// Converts a string in base58 (with prefixes like "ed25519:" or "secp256k1:") into a `PublicKey`.
     fn to_public_key(&self) -> Result<PublicKey, String>;
 
     /// Converts a string in base58 (with prefixes like "ed25519:" or "secp256k1:") into a byte vector.
     fn to_public_key_as_bytes(&self) -> Result<Vec<u8>, String>;
-
-    /// Converts a string in base58 into a 32-byte array.
-    fn to_fixed_32_bytes(&self) -> Result<[u8; 32], String>;
-
-    /// Converts a string in base58 into a 64-byte array.
-    fn to_fixed_64_bytes(&self) -> Result<[u8; 64], String>;
 
     /// Converts a string in base58 with a "ed25519:" prefix into a 64-byte array.
     fn try_ed25519_into_bytes(&self) -> Result<[u8; ED25519_PUBLIC_KEY_LENGTH], String>;
@@ -54,34 +54,6 @@ impl PublicKeyStrExt for str {
         }
     }
 
-    fn try_ed25519_into_bytes(&self) -> Result<[u8; 32], String> {
-        self.strip_prefix("ed25519:")
-            .ok_or_else(|| "Invalid ED25519 key format".to_string())
-            .and_then(|rest| {
-                let bytes = bs58::decode(rest)
-                    .into_vec()
-                    .map_err(|e| format!("Failed to decode base58: {}", e))?;
-
-                bytes
-                    .try_into()
-                    .map_err(|_| "Public key should be 32 bytes".to_string())
-            })
-    }
-
-    fn try_secp256k1_into_bytes(&self) -> Result<[u8; 64], String> {
-        self.strip_prefix("secp256k1:")
-            .ok_or_else(|| "Invalid SECP256K1 key format".to_string())
-            .and_then(|rest| {
-                let bytes = bs58::decode(rest)
-                    .into_vec()
-                    .map_err(|e| format!("Failed to decode base58: {}", e))?;
-
-                bytes
-                    .try_into()
-                    .map_err(|_| "Public key should be 64 bytes".to_string())
-            })
-    }
-
     fn to_public_key_as_bytes(&self) -> Result<Vec<u8>, String> {
         let (key_type, key_data) = self
             .split_once(':')
@@ -109,6 +81,34 @@ impl PublicKeyStrExt for str {
             _ => Err("Unknown key type".into()),
         }
     }
+
+    fn try_ed25519_into_bytes(&self) -> Result<[u8; 32], String> {
+        self.strip_prefix("ed25519:")
+            .ok_or_else(|| "Invalid ED25519 key format".to_string())
+            .and_then(|rest| {
+                let bytes = bs58::decode(rest)
+                    .into_vec()
+                    .map_err(|e| format!("Failed to decode base58: {}", e))?;
+
+                bytes
+                    .try_into()
+                    .map_err(|_| "Public key should be 32 bytes".to_string())
+            })
+    }
+
+    fn try_secp256k1_into_bytes(&self) -> Result<[u8; 64], String> {
+        self.strip_prefix("secp256k1:")
+            .ok_or_else(|| "Invalid SECP256K1 key format".to_string())
+            .and_then(|rest| {
+                let bytes = bs58::decode(rest)
+                    .into_vec()
+                    .map_err(|e| format!("Failed to decode base58: {}", e))?;
+
+                bytes
+                    .try_into()
+                    .map_err(|_| "Public key should be 64 bytes".to_string())
+            })
+    }
 }
 
 /// Helper function to decode a base58 string into a fixed-size byte array.
@@ -125,9 +125,42 @@ fn decode_base58_to_fixed_bytes<const N: usize>(input: &str) -> Result<[u8; N], 
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
 
-    use super::*;
+    #[test]
+    fn test_to_fixed_64_bytes() {
+        let key_str = "3bTpKQ4f3xW1H5VkJrPSLffYiw5XwKMyRsfEqQViakTkUG9N5U2HqfpT3UGsJ93cRURdEYfA4J4wmdLcsUEnT7wx";
+        let result = key_str.to_fixed_64_bytes();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 64);
+    }
+
+    #[test]
+    fn test_invalid_to_fixed_64_bytes() {
+        let key_str = "invalidbase58";
+        let result = key_str.to_fixed_64_bytes();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_to_fixed_32_bytes() {
+        let key_str = "6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
+        let result = key_str.to_fixed_32_bytes();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), 32);
+    }
+
+    #[test]
+    fn test_invalid_to_fixed_32_bytes() {
+        let key_str = "invalidbase58";
+        let result = key_str.to_fixed_32_bytes();
+
+        assert!(result.is_err());
+    }
 
     #[test]
     fn test_to_public_key_ed25519() {
@@ -149,8 +182,6 @@ mod tests {
         let key_str = "secp256k1:3bTpKQ4f3xW1H5VkJrPSLffYiw5XwKMyRsfEqQViakTkUG9N5U2HqfpT3UGsJ93cRURdEYfA4J4wmdLcsUEnT7wx";
         let public_key = key_str.to_public_key();
 
-        println!("{:?}", public_key);
-
         assert!(public_key.is_ok());
 
         match public_key.unwrap() {
@@ -159,6 +190,22 @@ mod tests {
             }
             _ => panic!("Expected SECP256K1 key"),
         }
+    }
+
+    #[test]
+    fn test_to_public_key_invalid_key_format() {
+        let key_str = "invalid:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
+        let public_key = key_str.to_public_key();
+
+        assert!(public_key.is_err());
+    }
+
+    #[test]
+    fn test_to_public_key_invalid_base58() {
+        let key_str = "ed25519:invalidbase58";
+        let public_key = key_str.to_public_key();
+
+        assert!(public_key.is_err());
     }
 
     #[test]
@@ -180,23 +227,7 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_key_format() {
-        let key_str = "invalid:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
-        let public_key = key_str.to_public_key();
-
-        assert!(public_key.is_err());
-    }
-
-    #[test]
-    fn test_invalid_base58() {
-        let key_str = "ed25519:invalidbase58";
-        let public_key = key_str.to_public_key();
-
-        assert!(public_key.is_err());
-    }
-
-    #[test]
-    fn test_invalid_key_length_ed25519() {
+    fn test_to_public_key_as_bytes_invalid_key_length_ed25519() {
         let key_str = "ed25519:abcd"; // Too short for a valid ED25519 key
         let public_key_bytes = key_str.to_public_key_as_bytes();
 
@@ -204,10 +235,44 @@ mod tests {
     }
 
     #[test]
-    fn test_invalid_key_length_secp256k1() {
+    fn test_to_public_key_as_bytes_invalid_key_length_secp256k1() {
         let key_str = "secp256k1:abcd"; // Too short for a valid SECP256K1 key
         let public_key_bytes = key_str.to_public_key_as_bytes();
 
         assert!(public_key_bytes.is_err());
+    }
+
+    #[test]
+    fn test_try_ed25519_into_bytes() {
+        let key_str = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
+        let result = key_str.try_ed25519_into_bytes();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), ED25519_PUBLIC_KEY_LENGTH);
+    }
+
+    #[test]
+    fn test_try_ed25519_into_bytes_invalid_base58() {
+        let key_str = "ed25519:invalidbase58";
+        let result = key_str.try_ed25519_into_bytes();
+
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_try_secp256k1_into_bytes() {
+        let key_str = "secp256k1:3bTpKQ4f3xW1H5VkJrPSLffYiw5XwKMyRsfEqQViakTkUG9N5U2HqfpT3UGsJ93cRURdEYfA4J4wmdLcsUEnT7wx";
+        let result = key_str.try_secp256k1_into_bytes();
+
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().len(), SECP256K1_PUBLIC_KEY_LENGTH);
+    }
+
+    #[test]
+    fn test_try_secp256k1_into_bytes_invalid_base58() {
+        let key_str = "secp256k1:invalidbase58";
+        let result = key_str.try_secp256k1_into_bytes();
+
+        assert!(result.is_err());
     }
 }
