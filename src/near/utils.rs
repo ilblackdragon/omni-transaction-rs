@@ -8,10 +8,8 @@ pub trait PublicKeyStrExt {
     /// Converts a string in base58 (with prefixes like "ed25519:" or "secp256k1:") into a `PublicKey`.
     fn to_public_key(&self) -> Result<PublicKey, String>;
 
+    /// Converts a string in base58 (with prefixes like "ed25519:" or "secp256k1:") into a 32 byte vector.
     fn to_public_key_as_bytes(&self) -> Result<[u8; 32], String>;
-
-    // /// Converts a string in base58 into a block hash `[u8; 32]`.
-    // fn to_block_hash(&self) -> Result<[u8; 32], String>;
 
     /// Converts a string in base58 into a 32 byte vector.
     fn to_fixed_32_bytes(&self) -> Result<[u8; 32], String>;
@@ -60,13 +58,6 @@ impl PublicKeyStrExt for str {
             Err("Unknown key type or invalid format".into())
         }
     }
-
-    // fn to_block_hash(&self) -> Result<[u8; 32], String> {
-    //     let bytes = bs58::decode(self).into_vec().map_err(|e| e.to_string())?;
-    //     bytes
-    //         .try_into()
-    //         .map_err(|_| "Block hash should be exactly 32 bytes long".to_string())
-    // }
 }
 
 fn vec_to_fixed<T, const N: usize>(v: Vec<T>) -> [T; N] {
