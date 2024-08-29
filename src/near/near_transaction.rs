@@ -36,6 +36,7 @@ mod tests {
         AccessKey as OmniAccessKey, AccessKeyPermission as OmniAccessKeyPermission,
         Action as OmniAction, AddKeyAction as OmniAddKeyAction,
         CreateAccountAction as OmniCreateAccountAction,
+        DeleteAccountAction as OmniDeleteAccountAction, DeleteKeyAction as OmniDeleteKeyAction,
         DeployContractAction as OmniDeployContractAction,
         FunctionCallAction as OmniFunctionCallAction, StakeAction as OmniStakeAction,
         TransferAction as OmniTransferAction,
@@ -43,7 +44,8 @@ mod tests {
     use crate::near::utils::PublicKeyStrExt;
     use near_crypto::{ED25519PublicKey, PublicKey};
     use near_primitives::action::{
-        CreateAccountAction, DeployContractAction, FunctionCallAction, StakeAction,
+        CreateAccountAction, DeleteAccountAction, DeleteKeyAction, DeployContractAction,
+        FunctionCallAction, StakeAction,
     };
     use near_primitives::{
         account::{AccessKey, AccessKeyPermission},
@@ -130,8 +132,8 @@ mod tests {
                     stake: 1u128,
                     public_key: PublicKey::ED25519(ED25519PublicKey(
                         "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
-                            .to_public_key_as_bytes()
-                            .unwrap(),
+                            .try_ed25519_into_bytes()
+                            .expect("Public key should be 32 bytes"),
                     )),
                 }))],
                 omni_actions: vec![OmniAction::Stake(Box::new(OmniStakeAction {
@@ -151,8 +153,8 @@ mod tests {
                 near_primitive_actions: vec![Action::AddKey(Box::new(AddKeyAction {
                     public_key: PublicKey::ED25519(ED25519PublicKey(
                         "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
-                            .to_public_key_as_bytes()
-                            .unwrap(),
+                            .try_ed25519_into_bytes()
+                            .expect("Public key should be 32 bytes"),
                     )),
                     access_key: AccessKey {
                         nonce: 0,
@@ -169,6 +171,40 @@ mod tests {
                     },
                 }))],
             },
+            // DeleteKey
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::DeleteKey(Box::new(DeleteKeyAction {
+                    public_key: PublicKey::ED25519(ED25519PublicKey(
+                        "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                            .try_ed25519_into_bytes()
+                            .expect("Public key should be 32 bytes"),
+                    )),
+                }))],
+                omni_actions: vec![OmniAction::DeleteKey(Box::new(OmniDeleteKeyAction {
+                    public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                        .to_public_key()
+                        .unwrap(),
+                }))],
+            },
+            // DeleteAccount
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::DeleteAccount(DeleteAccountAction {
+                    beneficiary_id: "bob.near".parse().unwrap(),
+                })],
+                omni_actions: vec![OmniAction::DeleteAccount(OmniDeleteAccountAction {
+                    beneficiary_id: "bob.near".parse().unwrap(),
+                })],
+            },
             // Transfer and Add Key
             TestCase {
                 signer_id: "forgetful-parent.testnet",
@@ -182,7 +218,9 @@ mod tests {
                         public_key: PublicKey::ED25519(ED25519PublicKey(
                             "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                                 .to_public_key_as_bytes()
-                                .unwrap(),
+                                .unwrap()
+                                .try_into()
+                                .expect("Public key should be 32 bytes"),
                         )),
                         access_key: AccessKey {
                             nonce: 0,
@@ -217,7 +255,9 @@ mod tests {
                     test_case
                         .signer_public_key
                         .to_public_key_as_bytes()
-                        .unwrap(),
+                        .unwrap()
+                        .try_into()
+                        .expect("Public key should be 32 bytes"),
                 )),
                 nonce: test_case.nonce,
                 receiver_id: test_case.receiver_id.parse().unwrap(),

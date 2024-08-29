@@ -1,5 +1,8 @@
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize};
+use near_sdk::{
+    serde::{Deserialize, Deserializer, Serialize},
+    AccountId,
+};
 use serde_big_array::BigArray;
 
 use std::io::{Error, Write};
@@ -20,6 +23,8 @@ pub enum Action {
     Transfer(TransferAction),
     Stake(Box<StakeAction>),
     AddKey(Box<AddKeyAction>),
+    DeleteKey(Box<DeleteKeyAction>),
+    DeleteAccount(DeleteAccountAction),
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
@@ -95,6 +100,18 @@ pub struct FunctionCallPermission {
     pub method_names: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct DeleteKeyAction {
+    /// A public key associated with the access_key to be deleted.
+    pub public_key: PublicKey,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[serde(crate = "near_sdk::serde")]
+pub struct DeleteAccountAction {
+    pub beneficiary_id: AccountId,
+}
 // Public Key
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
