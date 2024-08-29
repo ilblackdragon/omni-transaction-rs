@@ -35,10 +35,16 @@ mod tests {
     use crate::near::types::{
         AccessKey as OmniAccessKey, AccessKeyPermission as OmniAccessKeyPermission,
         Action as OmniAction, AddKeyAction as OmniAddKeyAction,
+        CreateAccountAction as OmniCreateAccountAction,
+        DeployContractAction as OmniDeployContractAction,
+        FunctionCallAction as OmniFunctionCallAction, StakeAction as OmniStakeAction,
         TransferAction as OmniTransferAction,
     };
     use crate::near::utils::PublicKeyStrExt;
     use near_crypto::{ED25519PublicKey, PublicKey};
+    use near_primitives::action::{
+        CreateAccountAction, DeployContractAction, FunctionCallAction, StakeAction,
+    };
     use near_primitives::{
         account::{AccessKey, AccessKeyPermission},
         action::{Action, AddKeyAction, TransferAction},
@@ -59,7 +65,51 @@ mod tests {
 
     fn create_test_cases() -> Vec<TestCase> {
         vec![
-            // Simple transfer
+            // Create Account
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::CreateAccount(CreateAccountAction {})],
+                omni_actions: vec![OmniAction::CreateAccount(OmniCreateAccountAction {})],
+            },
+            // Deploy Contract
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::DeployContract(DeployContractAction {
+                    code: vec![0x01, 0x02, 0x03],
+                })],
+                omni_actions: vec![OmniAction::DeployContract(OmniDeployContractAction {
+                    code: vec![0x01, 0x02, 0x03],
+                })],
+            },
+            // Function Call
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::FunctionCall(Box::new(FunctionCallAction {
+                    method_name: "function1".to_string(),
+                    args: vec![0x01, 0x02, 0x03],
+                    gas: 100,
+                    deposit: 1u128,
+                }))],
+                omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
+                    method_name: "function1".to_string(),
+                    args: vec![0x01, 0x02, 0x03],
+                    gas: 100,
+                    deposit: 1u128,
+                }))],
+            },
+            // Transfer
             TestCase {
                 signer_id: "alice.near",
                 signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
@@ -68,6 +118,56 @@ mod tests {
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
                 near_primitive_actions: vec![Action::Transfer(TransferAction { deposit: 1u128 })],
                 omni_actions: vec![OmniAction::Transfer(OmniTransferAction { deposit: 1u128 })],
+            },
+            // Stake
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::Stake(Box::new(StakeAction {
+                    stake: 1u128,
+                    public_key: PublicKey::ED25519(ED25519PublicKey(
+                        "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                            .to_public_key_as_bytes()
+                            .unwrap(),
+                    )),
+                }))],
+                omni_actions: vec![OmniAction::Stake(Box::new(OmniStakeAction {
+                    stake: 1u128,
+                    public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                        .to_public_key()
+                        .unwrap(),
+                }))],
+            },
+            // AddKey
+            TestCase {
+                signer_id: "alice.near",
+                signer_public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                nonce: 1,
+                receiver_id: "bob.near",
+                block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+                near_primitive_actions: vec![Action::AddKey(Box::new(AddKeyAction {
+                    public_key: PublicKey::ED25519(ED25519PublicKey(
+                        "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                            .to_public_key_as_bytes()
+                            .unwrap(),
+                    )),
+                    access_key: AccessKey {
+                        nonce: 0,
+                        permission: AccessKeyPermission::FullAccess,
+                    },
+                }))],
+                omni_actions: vec![OmniAction::AddKey(Box::new(OmniAddKeyAction {
+                    public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                        .to_public_key()
+                        .unwrap(),
+                    access_key: OmniAccessKey {
+                        nonce: 0,
+                        permission: OmniAccessKeyPermission::FullAccess,
+                    },
+                }))],
             },
             // Transfer and Add Key
             TestCase {
@@ -141,8 +241,8 @@ mod tests {
 
             assert_eq!(
                 serialized_near_primitive_v0_tx, serialized_omni_tx,
-                "Test case {} failed: serialized transactions do not match",
-                i
+                "Test case {} failed: serialized transactions do not match.\nNEAR: {:?}\nOmni: {:?}",
+                i, serialized_near_primitive_v0_tx, serialized_omni_tx
             );
         }
     }
