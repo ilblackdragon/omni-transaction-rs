@@ -27,6 +27,10 @@ impl NearTransaction {
     pub fn build_for_signing(&self) -> Vec<u8> {
         borsh::to_vec(self).expect("failed to serialize NEAR transaction")
     }
+
+    pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
+        near_sdk::serde_json::from_str(json)
+    }
 }
 
 #[cfg(test)]

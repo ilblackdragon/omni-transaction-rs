@@ -1,10 +1,11 @@
+use super::utils::PublicKeyStrExt;
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
 use near_sdk::{
-    serde::{Deserialize, Serialize},
+    serde::{Deserialize, Deserializer, Serialize},
     AccountId,
 };
+use serde::de;
 use serde_big_array::BigArray;
-
 use std::io::{Error, Write};
 
 use borsh::BorshSerialize;
@@ -112,6 +113,7 @@ pub struct DeleteKeyAction {
 pub struct DeleteAccountAction {
     pub beneficiary_id: AccountId,
 }
+
 // Public Key
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, Ord, PartialEq, PartialOrd)]
@@ -122,7 +124,7 @@ pub struct Secp256K1PublicKey(#[serde(with = "BigArray")] pub [u8; SECP256K1_PUB
 #[serde(crate = "near_sdk::serde")]
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
+#[derive(Serialize, Debug, Clone, PartialEq, PartialOrd, Ord, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
@@ -156,5 +158,55 @@ impl From<[u8; 64]> for Secp256K1PublicKey {
 impl From<[u8; 32]> for ED25519PublicKey {
     fn from(data: [u8; 32]) -> Self {
         Self(data)
+    }
+}
+
+impl TryFrom<&[u8]> for PublicKey {
+    type Error = String;
+
+    fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
+        match value.len() {
+            ED25519_PUBLIC_KEY_LENGTH => Ok(PublicKey::ED25519(ED25519PublicKey(
+                value.try_into().unwrap(),
+            ))),
+            SECP256K1_PUBLIC_KEY_LENGTH => Ok(PublicKey::SECP256K1(Secp256K1PublicKey(
+                value.try_into().unwrap(),
+            ))),
+            _ => Err("Invalid public key length".to_string()),
+        }
+    }
+}
+
+// Serialization
+impl<'de> Deserialize<'de> for PublicKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct PublicKeyOrBytes;
+
+        impl<'de> serde::de::Visitor<'de> for PublicKeyOrBytes {
+            type Value = PublicKey;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a string or byte array representing a public key")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                value.to_public_key().map_err(de::Error::custom)
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                PublicKey::try_from(v).map_err(de::Error::custom)
+            }
+        }
+
+        deserializer.deserialize_any(PublicKeyOrBytes)
     }
 }
