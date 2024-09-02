@@ -19,7 +19,8 @@ mod tests {
 
     use super::{TransactionBuilder as OmniTransactionBuilder, TxBuilder};
     use crate::near::types::{
-        Action as OmniAction, PublicKey as OmniPublicKey, TransferAction as OmniTransferAction,
+        Action as OmniAction, BlockHash, PublicKey as OmniPublicKey,
+        TransferAction as OmniTransferAction,
     };
     use crate::{
         evm::utils::parse_eth_address,
@@ -42,7 +43,7 @@ mod tests {
         let signer_public_key = [0u8; 64];
         let nonce = 0;
         let receiver_id: &str = "bob.near";
-        let block_hash = [0u8; 32];
+        let block_hash = BlockHash([0u8; 32].into());
         let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: 1u128 });
         let omni_actions = vec![transfer_action];
         let actions = Action::Transfer(TransferAction { deposit: 1u128 });

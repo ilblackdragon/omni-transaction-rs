@@ -1,6 +1,6 @@
 use super::{
     near_transaction::NearTransaction,
-    types::{Action, PublicKey},
+    types::{Action, BlockHash, PublicKey},
 };
 use crate::transaction_builder::TxBuilder;
 
@@ -9,7 +9,7 @@ pub struct NearTransactionBuilder {
     pub signer_public_key: Option<PublicKey>,
     pub nonce: Option<u64>,
     pub receiver_id: Option<String>,
-    pub block_hash: Option<[u8; 32]>,
+    pub block_hash: Option<BlockHash>,
     pub actions: Option<Vec<Action>>,
 }
 
@@ -39,7 +39,7 @@ impl TxBuilder<NearTransaction> for NearTransactionBuilder {
                 .expect("Missing receiver ID")
                 .parse()
                 .unwrap(),
-            block_hash: self.block_hash.expect("Missing block hash"),
+            block_hash: self.block_hash.clone().expect("Missing block hash"),
             actions: self.actions.clone().expect("Missing actions"),
         }
     }
@@ -77,7 +77,7 @@ impl NearTransactionBuilder {
         self
     }
 
-    pub const fn block_hash(mut self, block_hash: [u8; 32]) -> Self {
+    pub const fn block_hash(mut self, block_hash: BlockHash) -> Self {
         self.block_hash = Some(block_hash);
         self
     }
@@ -105,7 +105,7 @@ mod tests {
         let signer_public_key = [0u8; 64];
         let nonce = 0;
         let receiver_id: &str = "bob.near";
-        let block_hash = [0u8; 32];
+        let block_hash = BlockHash([0u8; 32].into());
         let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: 1u128 });
         let omni_actions = vec![transfer_action];
         let actions = Action::Transfer(TransferAction { deposit: 1u128 });

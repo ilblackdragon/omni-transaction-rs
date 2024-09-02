@@ -2,7 +2,7 @@ use borsh::BorshSerialize;
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{borsh, AccountId};
 
-use super::types::{Action, PublicKey};
+use super::types::{Action, BlockHash, PublicKey};
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -18,7 +18,7 @@ pub struct NearTransaction {
     /// Receiver account for this transaction
     pub receiver_id: AccountId,
     /// The hash of the block in the blockchain on top of which the given transaction is valid
-    pub block_hash: [u8; 32],
+    pub block_hash: BlockHash,
     /// A list of actions to be applied
     pub actions: Vec<Action>,
 }
@@ -277,7 +277,7 @@ mod tests {
                 signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
                 nonce: test_case.nonce,
                 receiver_id: test_case.receiver_id.parse().unwrap(),
-                block_hash: test_case.block_hash.to_fixed_32_bytes().unwrap(),
+                block_hash: test_case.block_hash.to_block_hash().unwrap(),
                 actions: test_case.omni_actions.clone(),
             };
 
@@ -289,5 +289,41 @@ mod tests {
                 i, serialized_near_primitive_v0_tx, serialized_omni_tx
             );
         }
+    }
+
+    #[test]
+    fn test_from_json() {
+        let input = r#"
+        {
+            "signer_id": "forgetful-parent.testnet",
+            "signer_public_key": "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+            "nonce": 1,
+            "receiver_id": "forgetful-parent.testnet",
+            "block_hash": "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+            "actions": [
+                { "Transfer": { "deposit": 1 } }
+            ]
+        }"#;
+
+        let tx = NearTransaction::from_json(input).unwrap();
+
+        println!("tx: {:?}", tx);
+
+        assert!(tx.signer_id == "forgetful-parent.testnet");
+        assert!(
+            tx.signer_public_key
+                == "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                    .to_public_key()
+                    .unwrap()
+        );
+        assert!(tx.nonce == 1);
+        assert!(tx.receiver_id == "forgetful-parent.testnet");
+        assert!(
+            tx.block_hash
+                == "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ"
+                    .to_block_hash()
+                    .unwrap()
+        );
+        assert!(tx.actions.len() == 1);
     }
 }

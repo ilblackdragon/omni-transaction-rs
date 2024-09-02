@@ -210,3 +210,61 @@ impl<'de> Deserialize<'de> for PublicKey {
         deserializer.deserialize_any(PublicKeyOrBytes)
     }
 }
+
+// Block Hash
+#[derive(Serialize, Debug, Clone, BorshSerialize, PartialEq, Eq)]
+#[serde(crate = "near_sdk::serde")]
+pub struct BlockHash(#[serde(with = "BigArray")] pub [u8; 32]);
+
+impl From<[u8; 32]> for BlockHash {
+    fn from(data: [u8; 32]) -> Self {
+        Self(data)
+    }
+}
+
+impl<'de> Deserialize<'de> for BlockHash {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct BlockHashOrBytes;
+
+        impl<'de> serde::de::Visitor<'de> for BlockHashOrBytes {
+            type Value = BlockHash;
+
+            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+                formatter.write_str("a string or byte array representing a block hash")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                println!("Deserializing BlockHash from string: {}", value);
+
+                let bytes = bs58::decode(value).into_vec().map_err(de::Error::custom)?;
+                let array: [u8; 32] = bytes
+                    .try_into()
+                    .map_err(|_| de::Error::custom("Invalid length"))?;
+
+                println!("Deserialized BlockHash: {:?}", array);
+
+                Ok(BlockHash(array))
+            }
+
+            fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
+            where
+                E: de::Error,
+            {
+                println!("Deserializing BlockHash from bytes: {:?}", v);
+
+                let array: [u8; 32] = v
+                    .try_into()
+                    .map_err(|_| de::Error::custom("Invalid length"))?;
+                Ok(BlockHash(array))
+            }
+        }
+
+        deserializer.deserialize_any(BlockHashOrBytes)
+    }
+}

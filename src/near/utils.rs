@@ -3,7 +3,7 @@ use std::convert::TryInto;
 
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
 
-use super::types::{ED25519PublicKey, PublicKey, Secp256K1PublicKey};
+use super::types::{BlockHash, ED25519PublicKey, PublicKey, Secp256K1PublicKey};
 
 /// Trait to extend `&str` with methods for parsing public keys and block hashes.
 pub trait PublicKeyStrExt {
@@ -24,6 +24,9 @@ pub trait PublicKeyStrExt {
 
     /// Converts a string in base58 with a "secp256k1:" prefix into a 64-byte array.
     fn try_secp256k1_into_bytes(&self) -> Result<[u8; SECP256K1_PUBLIC_KEY_LENGTH], String>;
+
+    /// Converts a string in base58 into a 32-byte array.
+    fn to_block_hash(&self) -> Result<BlockHash, String>;
 }
 
 impl PublicKeyStrExt for str {
@@ -108,6 +111,10 @@ impl PublicKeyStrExt for str {
                     .try_into()
                     .map_err(|_| "Public key should be 64 bytes".to_string())
             })
+    }
+
+    fn to_block_hash(&self) -> Result<BlockHash, String> {
+        decode_base58_to_fixed_bytes::<32>(self).map(BlockHash)
     }
 }
 
