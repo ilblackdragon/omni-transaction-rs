@@ -1,9 +1,9 @@
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use serde::de;
 use serde_big_array::BigArray;
 
-#[derive(Serialize, Debug, Clone, BorshSerialize, PartialEq, Eq)]
+#[derive(Serialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct BlockHash(#[serde(with = "BigArray")] pub [u8; 32]);
 
@@ -51,29 +51,6 @@ impl<'de> Deserialize<'de> for BlockHash {
                 }
                 Ok(BlockHash(arr))
             }
-
-            fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
-            where
-                V: de::MapAccess<'de>,
-            {
-                let key = map
-                    .next_key::<String>()?
-                    .ok_or_else(|| de::Error::missing_field("block_hash"))?;
-
-                if key.as_str() != "block_hash" {
-                    return Err(de::Error::unknown_field(&key, &["block_hash"]));
-                }
-
-                let bytes: Vec<u8> = map.next_value()?;
-
-                if bytes.len() != 32 {
-                    return Err(de::Error::invalid_length(bytes.len(), &"32"));
-                }
-
-                let mut arr = [0u8; 32];
-                arr.copy_from_slice(&bytes);
-                Ok(BlockHash(arr))
-            }
         }
 
         deserializer.deserialize_any(BlockHashOrBytes)
@@ -83,6 +60,7 @@ impl<'de> Deserialize<'de> for BlockHash {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use borsh::BorshDeserialize;
     use near_sdk::serde_json;
 
     #[test]
@@ -97,10 +75,8 @@ mod tests {
 
     #[test]
     fn test_blockhash_deserialize_from_json_string() {
-        let json = r#"{
-            "block_hash": [57, 74, 190, 179, 94, 112, 118, 9, 222, 143, 115, 182, 61, 67, 189, 26, 55, 
-            111, 254, 103, 147, 92, 170, 104, 147, 125, 210, 155, 192, 78, 103, 60]
-        }"#;
+        let json = r#"[57, 74, 190, 179, 94, 112, 118, 9, 222, 143, 115, 182, 61, 67, 189, 26, 55, 
+            111, 254, 103, 147, 92, 170, 104, 147, 125, 210, 155, 192, 78, 103, 60]"#;
 
         let block_hash: BlockHash = serde_json::from_str(json).unwrap();
 
@@ -110,20 +86,28 @@ mod tests {
     }
 
     #[test]
-    fn test_blockhash_deserialize_from_base58() {
+    fn test_blockhash_deserialize_from_json_base58() {
         let base58 = "CjNSmWXTWhC3EhRVtqLhRmWMTkRbU96wUACqxMtV1uGf";
+
+        // Serialize to JSON string
         let json = format!("\"{}\"", base58);
 
+        // Deserialize from JSON string using serde_json
         let block_hash: BlockHash = serde_json::from_str(&json).unwrap();
 
         assert_eq!(block_hash.0.len(), 32);
+        assert_eq!(block_hash.0[0], 174);
+        assert_eq!(block_hash.0[31], 252);
     }
 
     #[test]
     fn test_blockhash_serialize_deserialize_roundtrip() {
         let original = BlockHash([2; 32]);
+
+        // Serialize to JSON string
         let serialized = serde_json::to_string(&original).unwrap();
 
+        // Deserialize from JSON string
         let deserialized: BlockHash = serde_json::from_str(&serialized).unwrap();
 
         assert_eq!(original, deserialized);
@@ -134,5 +118,50 @@ mod tests {
         let invalid_base58 = "\"invalid_base58_string\"";
 
         assert!(serde_json::from_str::<BlockHash>(invalid_base58).is_err());
+    }
+
+    #[test]
+    fn test_blockhash_borsh_deserialize_from_bytes() {
+        let original_bytes: [u8; 32] = [
+            57, 74, 190, 179, 94, 112, 118, 9, 222, 143, 115, 182, 61, 67, 189, 26, 55, 111, 254,
+            103, 147, 92, 170, 104, 147, 125, 210, 155, 192, 78, 103, 60,
+        ];
+
+        // Create a BlockHash from the original bytes
+        let original_block_hash = BlockHash(original_bytes);
+
+        // Serialize the BlockHash using Borsh
+        let serialized =
+            borsh::to_vec(&original_block_hash).expect("Failed to serialize BlockHash");
+
+        // Deserialize the BlockHash from the serialized bytes
+        let deserialized_block_hash = BlockHash::try_from_slice(&serialized).unwrap();
+
+        // Verify that the deserialized BlockHash matches the original
+        assert_eq!(deserialized_block_hash.0, original_bytes);
+    }
+
+    #[test]
+    fn test_blockhash_from_invalid_length() {
+        let invalid_json = r#"[1, 2, 3]"#; // Too short
+        assert!(serde_json::from_str::<BlockHash>(invalid_json).is_err());
+    }
+
+    #[test]
+    fn test_blockhash_borsh_roundtrip() {
+        let original = BlockHash([3; 32]);
+
+        let serialized = borsh::to_vec(&original).expect("Failed to serialize");
+        let deserialized = BlockHash::try_from_slice(&serialized).expect("Failed to deserialize");
+
+        assert_eq!(original, deserialized);
+    }
+
+    #[test]
+    fn test_blockhash_from_into() {
+        let data = [4; 32];
+        let block_hash: BlockHash = data.into();
+
+        assert_eq!(block_hash.0, data);
     }
 }
