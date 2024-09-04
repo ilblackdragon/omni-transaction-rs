@@ -307,8 +307,6 @@ mod tests {
 
         let tx = NearTransaction::from_json(input).unwrap();
 
-        println!("tx: {:?}", tx);
-
         assert!(tx.signer_id == "forgetful-parent.testnet");
         assert!(
             tx.signer_public_key
