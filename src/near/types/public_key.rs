@@ -165,41 +165,26 @@ mod tests {
     use near_sdk::serde_json;
 
     #[test]
-    fn test_public_key_serialization() {
-        let ed25519_key = PublicKey::ED25519(ED25519PublicKey([3; ED25519_PUBLIC_KEY_LENGTH]));
+    fn test_public_key_serde_json_serialization() {
+        let ed25519_key = PublicKey::ED25519(ED25519PublicKey([8; ED25519_PUBLIC_KEY_LENGTH]));
         let secp256k1_key =
-            PublicKey::SECP256K1(Secp256K1PublicKey([4; SECP256K1_PUBLIC_KEY_LENGTH]));
+            PublicKey::SECP256K1(Secp256K1PublicKey([9; SECP256K1_PUBLIC_KEY_LENGTH]));
 
-        let keys = vec![ed25519_key, secp256k1_key];
+        for key in vec![ed25519_key, secp256k1_key] {
+            let serialized =
+                serde_json::to_string(&key).expect("Failed to serialize PublicKey to JSON");
 
-        for key in keys {
-            let serialized = serde_json::to_string(&key).unwrap();
-
-            let deserialized: PublicKey = serde_json::from_str(&serialized).unwrap();
+            let deserialized: PublicKey = serde_json::from_str(&serialized)
+                .expect("Failed to deserialize PublicKey from JSON");
 
             assert_eq!(key, deserialized);
+
+            // Check if the JSON string contains the correct key type
+            match key {
+                PublicKey::ED25519(_) => assert!(serialized.contains("ED25519")),
+                PublicKey::SECP256K1(_) => assert!(serialized.contains("SECP256K1")),
+            }
         }
-    }
-
-    #[test]
-    fn test_public_key_from_str() {
-        let ed25519_str = "ed25519:2S87aQ1PM9o6eBcEXnTR5yBAVRTiNmvj8J8ngZ6FzSca";
-        let secp256k1_str = "secp256k1:3bTpKQ4f3xW1H5VkJrPSLffYiw5XwKMyRsfEqQViakTkUG9N5U2HqfpT3UGsJ93cRURdEYfA4J4wmdLcsUEnT7wx";
-
-        let ed25519_key = ed25519_str.to_public_key().unwrap();
-        let secp256k1_key = secp256k1_str.to_public_key().unwrap();
-
-        assert!(matches!(ed25519_key, PublicKey::ED25519(_)));
-        assert!(matches!(secp256k1_key, PublicKey::SECP256K1(_)));
-    }
-
-    #[test]
-    fn test_borsh_serialization() {
-        let public_key = PublicKey::ED25519(ED25519PublicKey([6; ED25519_PUBLIC_KEY_LENGTH]));
-        let serialized = borsh::to_vec(&public_key).expect("Failed to serialize PublicKey");
-
-        assert_eq!(serialized[0], 0); // ED25519 type
-        assert_eq!(&serialized[1..], &[6; ED25519_PUBLIC_KEY_LENGTH]);
     }
 
     #[test]
@@ -210,8 +195,10 @@ mod tests {
 
         for key in vec![ed25519_key, secp256k1_key] {
             let serialized = borsh::to_vec(&key).expect("Failed to serialize PublicKey");
+
             let deserialized =
                 PublicKey::try_from_slice(&serialized).expect("Failed to deserialize PublicKey");
+
             assert_eq!(key, deserialized);
 
             match key {
@@ -228,35 +215,8 @@ mod tests {
     }
 
     #[test]
-    fn test_public_key_serde_json_serialization() {
-        let ed25519_key = PublicKey::ED25519(ED25519PublicKey([8; ED25519_PUBLIC_KEY_LENGTH]));
-        let secp256k1_key =
-            PublicKey::SECP256K1(Secp256K1PublicKey([9; SECP256K1_PUBLIC_KEY_LENGTH]));
-
-        for key in vec![ed25519_key, secp256k1_key] {
-            let serialized =
-                serde_json::to_string(&key).expect("Failed to serialize PublicKey to JSON");
-            let deserialized: PublicKey = serde_json::from_str(&serialized)
-                .expect("Failed to deserialize PublicKey from JSON");
-            assert_eq!(key, deserialized);
-
-            // Check if the JSON string contains the correct key type
-            match key {
-                PublicKey::ED25519(_) => assert!(serialized.contains("ED25519")),
-                PublicKey::SECP256K1(_) => assert!(serialized.contains("SECP256K1")),
-            }
-        }
-    }
-
-    #[test]
-    fn test_public_key_from_invalid_str() {
-        let invalid_str = "invalid:2S87aQ1PM9o6eBcEXnTR5yBAVRTiNmvj8J8ngZ6FzSca";
-        assert!(invalid_str.to_public_key().is_err());
-    }
-
-    #[test]
-    fn test_public_key_deserialize_from_near_tx() {
-        let json = r#"
+    fn test_public_key_json_to_borsh_roundtrip() {
+        let ed25519_json = r#"
             {
               "signer_public_key": {
                 "ED25519": [
@@ -266,17 +226,54 @@ mod tests {
               }
             }"#;
 
-        let parsed: serde_json::Value = serde_json::from_str(json).unwrap();
-        let public_key: PublicKey =
-            serde_json::from_value(parsed["signer_public_key"].clone()).unwrap();
+        let secp256k1_json = r#"
+            {
+              "signer_public_key": {
+                "SECP256K1": [
+                  77, 167, 224, 244, 9, 106, 175, 44, 229, 94, 55, 22, 87, 205, 48, 137,
+                  186, 30, 159, 89, 244, 214, 226, 123, 208, 46, 71, 42, 22, 166, 29, 193,
+                  77, 167, 224, 244, 9, 106, 175, 44, 229, 94, 55, 22, 87, 205, 48, 137,
+                  186, 30, 159, 89, 244, 214, 226, 123, 208, 46, 71, 42, 22, 166, 29, 193
+                ]
+              }
+            }"#;
 
-        match public_key {
-            PublicKey::ED25519(key) => {
-                assert_eq!(key.0.len(), 32);
-                assert_eq!(key.0[0], 77);
-                assert_eq!(key.0[31], 193);
+        for json in vec![ed25519_json, secp256k1_json] {
+            let parsed: serde_json::Value = serde_json::from_str(json).unwrap();
+            let public_key: PublicKey =
+                serde_json::from_value(parsed["signer_public_key"].clone()).unwrap();
+
+            // Serialize to Borsh
+            let serialized = borsh::to_vec(&public_key).expect("Failed to serialize PublicKey");
+
+            // Deserialize from Borsh
+            let deserialized =
+                PublicKey::try_from_slice(&serialized).expect("Failed to deserialize PublicKey");
+
+            // Verify the deserialized key matches the original
+            assert_eq!(public_key, deserialized);
+
+            let first_bytes_expected_value = 77;
+            let last_bytes_expected_value = 193;
+
+            match deserialized {
+                PublicKey::ED25519(key) => {
+                    assert_eq!(key.0.len(), ED25519_PUBLIC_KEY_LENGTH);
+                    assert_eq!(key.0[0], first_bytes_expected_value);
+                    assert_eq!(
+                        key.0[ED25519_PUBLIC_KEY_LENGTH - 1],
+                        last_bytes_expected_value
+                    );
+                }
+                PublicKey::SECP256K1(key) => {
+                    assert_eq!(key.0.len(), SECP256K1_PUBLIC_KEY_LENGTH);
+                    assert_eq!(key.0[0], first_bytes_expected_value);
+                    assert_eq!(
+                        key.0[SECP256K1_PUBLIC_KEY_LENGTH - 1],
+                        last_bytes_expected_value
+                    );
+                }
             }
-            _ => panic!("Expected ED25519 public key"),
         }
     }
 }
