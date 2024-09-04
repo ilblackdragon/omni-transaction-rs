@@ -282,4 +282,21 @@ mod tests {
 
         assert!(result.is_err());
     }
+
+    #[test]
+    fn test_to_block_hash() {
+        let block_hash_str = "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ";
+        let block_hash = block_hash_str.to_block_hash();
+
+        assert!(block_hash.is_ok());
+        assert_eq!(block_hash.unwrap().0.len(), 32);
+    }
+
+    #[test]
+    fn test_invalid_to_block_hash() {
+        let block_hash_str = "invalidbase58";
+        let block_hash = block_hash_str.to_block_hash();
+
+        assert!(block_hash.is_err());
+    }
 }
