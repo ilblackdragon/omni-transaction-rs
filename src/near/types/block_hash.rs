@@ -44,8 +44,8 @@ impl<'de> Deserialize<'de> for BlockHash {
                 A: de::SeqAccess<'de>,
             {
                 let mut arr = [0u8; 32];
-                for i in 0..32 {
-                    arr[i] = seq
+                for (i, elem) in arr.iter_mut().enumerate() {
+                    *elem = seq
                         .next_element()?
                         .ok_or_else(|| de::Error::invalid_length(i, &self))?;
                 }

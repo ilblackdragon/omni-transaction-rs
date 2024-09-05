@@ -43,10 +43,10 @@ impl BorshDeserialize for PublicKey {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         let key_type = <u8 as BorshDeserialize>::deserialize(buf)?;
         match key_type {
-            0 => Ok(PublicKey::ED25519(
+            0 => Ok(Self::ED25519(
                 <ED25519PublicKey as BorshDeserialize>::deserialize(buf)?,
             )),
-            1 => Ok(PublicKey::SECP256K1(
+            1 => Ok(Self::SECP256K1(
                 <Secp256K1PublicKey as BorshDeserialize>::deserialize(buf)?,
             )),
             _ => Err(std::io::Error::new(
@@ -59,12 +59,10 @@ impl BorshDeserialize for PublicKey {
     fn deserialize_reader<R: std::io::Read>(reader: &mut R) -> std::io::Result<Self> {
         let key_type = u8::deserialize_reader(reader)?;
         match key_type {
-            0 => Ok(PublicKey::ED25519(ED25519PublicKey::deserialize_reader(
+            0 => Ok(Self::ED25519(ED25519PublicKey::deserialize_reader(reader)?)),
+            1 => Ok(Self::SECP256K1(Secp256K1PublicKey::deserialize_reader(
                 reader,
             )?)),
-            1 => Ok(PublicKey::SECP256K1(
-                Secp256K1PublicKey::deserialize_reader(reader)?,
-            )),
             _ => Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "Invalid public key type",
@@ -92,10 +90,10 @@ impl TryFrom<&[u8]> for PublicKey {
 
     fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
         match value.len() {
-            ED25519_PUBLIC_KEY_LENGTH => Ok(PublicKey::ED25519(ED25519PublicKey(
-                value.try_into().unwrap(),
-            ))),
-            SECP256K1_PUBLIC_KEY_LENGTH => Ok(PublicKey::SECP256K1(Secp256K1PublicKey(
+            ED25519_PUBLIC_KEY_LENGTH => {
+                Ok(Self::ED25519(ED25519PublicKey(value.try_into().unwrap())))
+            }
+            SECP256K1_PUBLIC_KEY_LENGTH => Ok(Self::SECP256K1(Secp256K1PublicKey(
                 value.try_into().unwrap(),
             ))),
             _ => Err("Invalid public key length".to_string()),
@@ -170,7 +168,7 @@ mod tests {
         let secp256k1_key =
             PublicKey::SECP256K1(Secp256K1PublicKey([9; SECP256K1_PUBLIC_KEY_LENGTH]));
 
-        for key in vec![ed25519_key, secp256k1_key] {
+        for key in [ed25519_key, secp256k1_key] {
             let serialized =
                 serde_json::to_string(&key).expect("Failed to serialize PublicKey to JSON");
 
@@ -193,7 +191,7 @@ mod tests {
         let secp256k1_key =
             PublicKey::SECP256K1(Secp256K1PublicKey([7; SECP256K1_PUBLIC_KEY_LENGTH]));
 
-        for key in vec![ed25519_key, secp256k1_key] {
+        for key in [ed25519_key, secp256k1_key] {
             let serialized = borsh::to_vec(&key).expect("Failed to serialize PublicKey");
 
             let deserialized =
@@ -238,7 +236,7 @@ mod tests {
               }
             }"#;
 
-        for json in vec![ed25519_json, secp256k1_json] {
+        for json in [ed25519_json, secp256k1_json] {
             let parsed: serde_json::Value = serde_json::from_str(json).unwrap();
             let public_key: PublicKey =
                 serde_json::from_value(parsed["signer_public_key"].clone()).unwrap();
