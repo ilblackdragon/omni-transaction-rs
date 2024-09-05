@@ -5,7 +5,7 @@ use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_primitives::hash::CryptoHash;
 use near_workspaces::sandbox;
 use omni_transaction::near::types::{
-    Action, ED25519Signature, Signature as OmniSignature, TransferAction,
+    Action, ED25519Signature, Signature as OmniSignature, TransferAction, U128,
 };
 use omni_transaction::near::utils::PublicKeyStrExt;
 use omni_transaction::transaction_builder::{TransactionBuilder, TxBuilder};
@@ -26,7 +26,7 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_near(
     let alice_original_balance = alice.view_account().await?.balance;
     let bob_original_balance = bob.view_account().await?.balance;
 
-    let transfer_action = Action::Transfer(TransferAction { deposit: 1u128 });
+    let transfer_action = Action::Transfer(TransferAction { deposit: U128(1) });
     let actions = vec![transfer_action];
 
     // Configure the signer from the first default Sandbox account (Alice).

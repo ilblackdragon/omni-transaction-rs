@@ -2,7 +2,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{borsh, AccountId};
 
-use super::types::{Action, BlockHash, PublicKey, Signature};
+use super::types::{Action, BlockHash, PublicKey, Signature, U64};
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize)]
 #[serde(crate = "near_sdk::serde")]
@@ -14,7 +14,7 @@ pub struct NearTransaction {
     pub signer_public_key: PublicKey,
     /// Nonce is used to determine order of transaction in the pool.
     /// It increments for a combination of `signer_id` and `public_key`
-    pub nonce: u64,
+    pub nonce: U64,
     /// Receiver account for this transaction
     pub receiver_id: AccountId,
     /// The hash of the block in the blockchain on top of which the given transaction is valid
@@ -58,7 +58,7 @@ mod tests {
         DeployContractAction as OmniDeployContractAction, ED25519Signature,
         FunctionCallAction as OmniFunctionCallAction, Secp256K1Signature,
         Signature as OmniSignature, StakeAction as OmniStakeAction,
-        TransferAction as OmniTransferAction,
+        TransferAction as OmniTransferAction, U128,
     };
     use crate::near::utils::PublicKeyStrExt;
     use near_crypto::{ED25519PublicKey, PublicKey};
@@ -128,8 +128,8 @@ mod tests {
                 omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
                     method_name: "function1".to_string(),
                     args: vec![0x01, 0x02, 0x03],
-                    gas: 100,
-                    deposit: 1u128,
+                    gas: U64(100),
+                    deposit: U128(1),
                 }))],
             },
             // Transfer
@@ -140,7 +140,9 @@ mod tests {
                 receiver_id: "bob.near",
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
                 near_primitive_actions: vec![Action::Transfer(TransferAction { deposit: 1u128 })],
-                omni_actions: vec![OmniAction::Transfer(OmniTransferAction { deposit: 1u128 })],
+                omni_actions: vec![OmniAction::Transfer(OmniTransferAction {
+                    deposit: U128(1),
+                })],
             },
             // Stake
             TestCase {
@@ -158,7 +160,7 @@ mod tests {
                     )),
                 }))],
                 omni_actions: vec![OmniAction::Stake(Box::new(OmniStakeAction {
-                    stake: 1u128,
+                    stake: U128(1),
                     public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                         .to_public_key()
                         .unwrap(),
@@ -187,7 +189,7 @@ mod tests {
                         .to_public_key()
                         .unwrap(),
                     access_key: OmniAccessKey {
-                        nonce: 0,
+                        nonce: U64(0),
                         permission: OmniAccessKeyPermission::FullAccess,
                     },
                 }))],
@@ -250,13 +252,13 @@ mod tests {
                     })),
                 ],
                 omni_actions: vec![
-                    OmniAction::Transfer(OmniTransferAction { deposit: 1u128 }),
+                    OmniAction::Transfer(OmniTransferAction { deposit: U128(1) }),
                     OmniAction::AddKey(Box::new(OmniAddKeyAction {
                         public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                             .to_public_key()
                             .unwrap(),
                         access_key: OmniAccessKey {
-                            nonce: 0,
+                            nonce: U64(0),
                             permission: OmniAccessKeyPermission::FullAccess,
                         },
                     })),
@@ -292,7 +294,7 @@ mod tests {
             let omni_tx = NearTransaction {
                 signer_id: test_case.signer_id.parse().unwrap(),
                 signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
-                nonce: test_case.nonce,
+                nonce: U64(test_case.nonce),
                 receiver_id: test_case.receiver_id.parse().unwrap(),
                 block_hash: test_case.block_hash.to_block_hash().unwrap(),
                 actions: test_case.omni_actions.clone(),
@@ -344,7 +346,7 @@ mod tests {
             let omni_tx = NearTransaction {
                 signer_id: test_case.signer_id.parse().unwrap(),
                 signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
-                nonce: test_case.nonce,
+                nonce: U64(test_case.nonce),
                 receiver_id: test_case.receiver_id.parse().unwrap(),
                 block_hash: test_case.block_hash.to_block_hash().unwrap(),
                 actions: test_case.omni_actions.clone(),
@@ -407,7 +409,7 @@ mod tests {
             let omni_tx = NearTransaction {
                 signer_id: test_case.signer_id.parse().unwrap(),
                 signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
-                nonce: test_case.nonce,
+                nonce: U64(test_case.nonce),
                 receiver_id: test_case.receiver_id.parse().unwrap(),
                 block_hash: test_case.block_hash.to_block_hash().unwrap(),
                 actions: test_case.omni_actions.clone(),
@@ -446,6 +448,54 @@ mod tests {
     }
 
     #[test]
+    fn test_build_for_signing_for_omni_against_near_primitives_using_json_input() {
+        let input = r#"
+        {
+            "signer_id": "86a315fdc1c4211787aa2fd78a50041ee581c7fff6cec2535ebec14af5c40381",
+            "signer_public_key": "ed25519:A4ZsCYMqJ1oHFGR2g2mFrwhQvaWmyz8K5c5FvfxEPF52",
+            "nonce": 172237399000001,
+            "receiver_id": "86a315fdc1c4211787aa2fd78a50041ee581c7fff6cec2535ebec14af5c40381",
+            "block_hash": "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
+            "actions": [
+                { "Transfer": { "deposit": "1" } },
+                {
+                    "AddKey": {
+                        "public_key": "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp",
+                        "access_key": { "nonce": "0", "permission": "FullAccess" }
+                    }
+                },
+                {
+                    "DeleteKey": {
+                        "public_key": "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
+                    }
+                }
+            ]
+        }
+    "#;
+
+        let tx = NearTransaction::from_json(input).unwrap();
+
+        assert!(tx.signer_id == "86a315fdc1c4211787aa2fd78a50041ee581c7fff6cec2535ebec14af5c40381");
+        assert!(
+            tx.signer_public_key
+                == "ed25519:A4ZsCYMqJ1oHFGR2g2mFrwhQvaWmyz8K5c5FvfxEPF52"
+                    .to_public_key()
+                    .unwrap()
+        );
+        assert!(tx.nonce == U64(172237399000001));
+        assert!(
+            tx.receiver_id == "86a315fdc1c4211787aa2fd78a50041ee581c7fff6cec2535ebec14af5c40381"
+        );
+        assert!(
+            tx.block_hash
+                == "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ"
+                    .to_block_hash()
+                    .unwrap()
+        );
+        assert!(tx.actions.len() == 3);
+    }
+
+    #[test]
     fn test_from_json() {
         let input = r#"
         {
@@ -468,7 +518,7 @@ mod tests {
                     .to_public_key()
                     .unwrap()
         );
-        assert!(tx.nonce == 1);
+        assert!(tx.nonce == U64(1));
         assert!(tx.receiver_id == "forgetful-parent.testnet");
         assert!(
             tx.block_hash

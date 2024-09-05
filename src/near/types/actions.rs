@@ -3,6 +3,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
 
+use super::{U128, U64};
+
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub enum Action {
@@ -35,21 +37,21 @@ pub struct DeployContractAction {
 pub struct FunctionCallAction {
     pub method_name: String,
     pub args: Vec<u8>,
-    pub gas: u64,
-    pub deposit: u128,
+    pub gas: U64,
+    pub deposit: U128,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct TransferAction {
-    pub deposit: u128,
+    pub deposit: U128,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct StakeAction {
     /// Amount of tokens to stake.
-    pub stake: u128,
+    pub stake: U128,
     /// Validator key which will be used to sign transactions on behalf of signer_id
     pub public_key: PublicKey,
 }
@@ -69,7 +71,7 @@ pub struct AccessKey {
     /// Nonce for this access key, used for tx nonce generation. When access key is created, nonce
     /// is set to `(block_height - 1) * 1e6` to avoid tx hash collision on access key re-creation.
     /// See <https://github.com/near/nearcore/issues/3779> for more details.
-    pub nonce: u64,
+    pub nonce: U64,
     /// Defines permissions for this access key.
     pub permission: AccessKeyPermission,
 }
@@ -86,7 +88,7 @@ pub enum AccessKeyPermission {
 #[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 #[serde(crate = "near_sdk::serde")]
 pub struct FunctionCallPermission {
-    pub allowance: Option<u128>,
+    pub allowance: Option<U128>,
     pub receiver_id: String,
     pub method_names: Vec<String>,
 }
@@ -120,20 +122,20 @@ mod tests {
             Action::FunctionCall(Box::new(FunctionCallAction {
                 method_name: "test".to_string(),
                 args: vec![4, 5, 6],
-                gas: 1000000,
-                deposit: 0,
+                gas: U64(1000000),
+                deposit: U128(0),
             })),
             Action::Transfer(TransferAction {
-                deposit: 1000000000,
+                deposit: U128(1000000000),
             }),
             Action::Stake(Box::new(StakeAction {
-                stake: 100000000,
+                stake: U128(100000000),
                 public_key: PublicKey::ED25519(ED25519PublicKey([0; ED25519_PUBLIC_KEY_LENGTH])),
             })),
             Action::AddKey(Box::new(AddKeyAction {
                 public_key: PublicKey::ED25519(ED25519PublicKey([1; ED25519_PUBLIC_KEY_LENGTH])),
                 access_key: AccessKey {
-                    nonce: 0,
+                    nonce: U64(0),
                     permission: AccessKeyPermission::FullAccess,
                 },
             })),

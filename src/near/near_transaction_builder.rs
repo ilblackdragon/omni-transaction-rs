@@ -32,7 +32,7 @@ impl TxBuilder<NearTransaction> for NearTransactionBuilder {
                 .signer_public_key
                 .clone()
                 .expect("Missing signer public key"),
-            nonce: self.nonce.expect("Missing nonce"),
+            nonce: self.nonce.expect("Missing nonce").into(),
             receiver_id: self
                 .receiver_id
                 .clone()
@@ -93,6 +93,7 @@ mod tests {
     use super::*;
     use crate::near::types::{
         Action as OmniAction, PublicKey as OmniPublicKey, TransferAction as OmniTransferAction,
+        U128,
     };
     use near_crypto::PublicKey;
     use near_primitives::{
@@ -106,7 +107,7 @@ mod tests {
         let nonce = 0;
         let receiver_id: &str = "bob.near";
         let block_hash = BlockHash([0u8; 32]);
-        let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: 1u128 });
+        let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: U128(1) });
         let omni_actions = vec![transfer_action];
         let actions = Action::Transfer(TransferAction { deposit: 1u128 });
 
