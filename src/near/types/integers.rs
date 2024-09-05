@@ -125,7 +125,7 @@ mod tests {
         let u128_value = 12345678901234567890;
         let u64_from_u128: U64 = u128_value.into();
 
-        assert_eq!(u64_from_u128.0, u128_value as u64);
+        assert_eq!(u64_from_u128.0, u128_value);
     }
 
     #[test]
@@ -133,7 +133,7 @@ mod tests {
         let u64_value = 1234567890;
         let u128_from_u64: U128 = u64_value.into();
 
-        assert_eq!(u128_from_u64.0, u64_value as u128);
+        assert_eq!(u128_from_u64.0, u64_value);
     }
 
     #[test]
@@ -155,7 +155,7 @@ mod tests {
     #[test]
     fn test_u64_from_str() {
         let u64_value = "12345678901234567890";
-        let deserialized: U64 = serde_json::from_str(&u64_value).unwrap();
+        let deserialized: U64 = serde_json::from_str(u64_value).unwrap();
 
         assert_eq!(deserialized, U64(12345678901234567890));
     }
@@ -163,7 +163,7 @@ mod tests {
     #[test]
     fn test_u128_from_str() {
         let u128_value = "12345678901234567890";
-        let deserialized: U128 = serde_json::from_str(&u128_value).unwrap();
+        let deserialized: U128 = serde_json::from_str(u128_value).unwrap();
 
         assert_eq!(deserialized, U128(12345678901234567890));
     }
