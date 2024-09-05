@@ -1,10 +1,10 @@
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::{borsh, AccountId};
 
-use super::types::{Action, BlockHash, PublicKey};
+use super::types::{Action, BlockHash, PublicKey, Signature};
 
-#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize)]
+#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct NearTransaction {
     /// An account on which behalf transaction is signed
@@ -23,9 +23,23 @@ pub struct NearTransaction {
     pub actions: Vec<Action>,
 }
 
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+pub struct SignedTransaction {
+    pub transaction: NearTransaction,
+    pub signature: Signature,
+}
+
 impl NearTransaction {
     pub fn build_for_signing(&self) -> Vec<u8> {
         borsh::to_vec(self).expect("failed to serialize NEAR transaction")
+    }
+
+    pub fn build_with_signature(&self, signature: Signature) -> Vec<u8> {
+        let signed_tx = SignedTransaction {
+            transaction: self.clone(),
+            signature,
+        };
+        borsh::to_vec(&signed_tx).expect("failed to serialize NEAR transaction")
     }
 
     pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
@@ -41,12 +55,14 @@ mod tests {
         Action as OmniAction, AddKeyAction as OmniAddKeyAction,
         CreateAccountAction as OmniCreateAccountAction,
         DeleteAccountAction as OmniDeleteAccountAction, DeleteKeyAction as OmniDeleteKeyAction,
-        DeployContractAction as OmniDeployContractAction,
-        FunctionCallAction as OmniFunctionCallAction, StakeAction as OmniStakeAction,
+        DeployContractAction as OmniDeployContractAction, ED25519Signature,
+        FunctionCallAction as OmniFunctionCallAction, Secp256K1Signature,
+        Signature as OmniSignature, StakeAction as OmniStakeAction,
         TransferAction as OmniTransferAction,
     };
     use crate::near::utils::PublicKeyStrExt;
     use near_crypto::{ED25519PublicKey, PublicKey};
+    use near_crypto::{InMemorySigner, KeyType, Signer};
     use near_primitives::action::{
         CreateAccountAction, DeleteAccountAction, DeleteKeyAction, DeployContractAction,
         FunctionCallAction, StakeAction,
@@ -55,6 +71,7 @@ mod tests {
         account::{AccessKey, AccessKeyPermission},
         action::{Action, AddKeyAction, TransferAction},
         hash::CryptoHash,
+        transaction::Transaction as NearPrimitiveTransaction,
         transaction::TransactionV0,
     };
 
@@ -287,6 +304,143 @@ mod tests {
                 serialized_near_primitive_v0_tx, serialized_omni_tx,
                 "Test case {} failed: serialized transactions do not match.\nNEAR: {:?}\nOmni: {:?}",
                 i, serialized_near_primitive_v0_tx, serialized_omni_tx
+            );
+        }
+    }
+
+    #[test]
+    fn test_build_with_signature_against_near_primitives_for_ed25519() {
+        let test_cases = create_test_cases();
+
+        for (i, test_case) in test_cases.iter().enumerate() {
+            let near_primitive_v0_tx: TransactionV0 = TransactionV0 {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                public_key: PublicKey::ED25519(ED25519PublicKey(
+                    test_case
+                        .signer_public_key
+                        .to_public_key_as_bytes()
+                        .unwrap()
+                        .try_into()
+                        .expect("Public key should be 32 bytes"),
+                )),
+                nonce: test_case.nonce,
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: CryptoHash(test_case.block_hash.to_fixed_32_bytes().unwrap()),
+                actions: test_case.near_primitive_actions.clone(),
+            };
+
+            let near_primitive_tx = NearPrimitiveTransaction::V0(near_primitive_v0_tx);
+
+            let in_memory_signer =
+                InMemorySigner::from_random("account_id".parse().unwrap(), KeyType::ED25519);
+
+            let signer = Signer::InMemory(in_memory_signer);
+
+            let signed_tx = near_primitive_tx.sign(&signer);
+
+            let encoded_signed_tx =
+                borsh::to_vec(&signed_tx).expect("failed to serialize signed transaction");
+
+            let omni_tx = NearTransaction {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
+                nonce: test_case.nonce,
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: test_case.block_hash.to_block_hash().unwrap(),
+                actions: test_case.omni_actions.clone(),
+            };
+
+            // @dev For testing purposes, we are only supporting ED25519 signatures
+            let signature_bytes: [u8; 64] = match &signed_tx.signature {
+                near_crypto::Signature::ED25519(sig) => sig.to_bytes(),
+                _ => panic!("Unsupported signature type"),
+            };
+
+            let omni_signature = OmniSignature::ED25519(ED25519Signature {
+                r: signature_bytes[..32].try_into().unwrap(),
+                s: signature_bytes[32..].try_into().unwrap(),
+            });
+
+            let serialized_omni_tx = omni_tx.build_with_signature(omni_signature);
+
+            assert_eq!(
+                serialized_omni_tx, encoded_signed_tx,
+                "Test case {} failed: serialized transactions do not match.\nNEAR: {:?}\nOmni: {:?}",
+                i, serialized_omni_tx, encoded_signed_tx
+            );
+        }
+    }
+
+    #[test]
+    fn test_build_with_signature_against_near_primitives_for_secp256k1() {
+        let test_cases = create_test_cases();
+
+        for (i, test_case) in test_cases.iter().enumerate() {
+            let near_primitive_v0_tx: TransactionV0 = TransactionV0 {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                public_key: PublicKey::ED25519(ED25519PublicKey(
+                    test_case
+                        .signer_public_key
+                        .to_public_key_as_bytes()
+                        .unwrap()
+                        .try_into()
+                        .expect("Public key should be 32 bytes"),
+                )),
+                nonce: test_case.nonce,
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: CryptoHash(test_case.block_hash.to_fixed_32_bytes().unwrap()),
+                actions: test_case.near_primitive_actions.clone(),
+            };
+
+            let near_primitive_tx = NearPrimitiveTransaction::V0(near_primitive_v0_tx);
+
+            let in_memory_signer =
+                InMemorySigner::from_random("account_id".parse().unwrap(), KeyType::SECP256K1);
+
+            let signer = Signer::InMemory(in_memory_signer);
+
+            let signed_tx = near_primitive_tx.sign(&signer);
+
+            let encoded_signed_tx =
+                borsh::to_vec(&signed_tx).expect("failed to serialize signed transaction");
+
+            let omni_tx = NearTransaction {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
+                nonce: test_case.nonce,
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: test_case.block_hash.to_block_hash().unwrap(),
+                actions: test_case.omni_actions.clone(),
+            };
+
+            // @dev For testing purposes, we are only supporting SECP256K1 signatures
+            let signature_serialized = serde_json::to_string(&signed_tx.signature).unwrap();
+
+            // Extract the actual signature bytes from the serialized string
+            let signature_str = signature_serialized
+                .trim_matches('"')
+                .split(':')
+                .nth(1)
+                .unwrap();
+
+            let signature_str = signature_str.trim();
+
+            // Decode the signature from Base58
+            let signature_bytes = bs58::decode(signature_str)
+                .into_vec()
+                .expect("Failed to decode Base58 signature");
+
+            let mut signature_array: [u8; 65] = [0; 65];
+            signature_array.copy_from_slice(&signature_bytes);
+
+            let omni_signature = OmniSignature::SECP256K1(Secp256K1Signature(signature_array));
+
+            let serialized_omni_tx = omni_tx.build_with_signature(omni_signature);
+
+            assert_eq!(
+                serialized_omni_tx, encoded_signed_tx,
+                "Test case {} failed: serialized transactions do not match.\nNEAR: {:?}\nOmni: {:?}",
+                i, serialized_omni_tx, encoded_signed_tx
             );
         }
     }

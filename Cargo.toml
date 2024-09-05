@@ -33,17 +33,18 @@ alloy-rlp = { version = "0.3.8", features = ["derive"] }
 alloy-primitives = { version = "0.7.7" }
 
 # near
-near-primitives = { version = "0.24.1" }
-near-crypto = { version = "0.24.1" }
+near-primitives = { version = "0.25.0" }
+near-crypto = { version = "0.25.0" }
 near-workspaces = { version = "0.12.0", features = [
     "experimental",
     "unstable",
 ] }
-near-jsonrpc-client = { version = "0.11.0" }
+near-jsonrpc-client = { git = "https://github.com/edsonalcala/near-jsonrpc-client-rs.git", branch = "master" }
+sha2 = "0.10.8"
+
 # async
 tokio = { version = "1.38", features = ["full"] }
 
 # misc
 eyre = "0.6"
 serde_json = "1.0"
-bs58 = "0.5.1"
