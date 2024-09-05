@@ -98,3 +98,90 @@ impl<'de> Deserialize<'de> for U128 {
         deserializer.deserialize_any(StringOrNumberVisitor)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_u64_struct_from_u64() {
+        let u64_value = 1234567890;
+        let u64_from_u64: U64 = u64_value.into();
+
+        assert_eq!(u64_from_u64.0, u64_value);
+    }
+
+    #[test]
+    fn test_u128_struct_from_u128() {
+        let u128_value = 12345678901234567890;
+        let u128_from_u128: U128 = u128_value.into();
+
+        assert_eq!(u128_from_u128.0, u128_value);
+    }
+
+    #[test]
+    fn test_u64_struct_from_u128() {
+        let u128_value = 12345678901234567890;
+        let u64_from_u128: U64 = u128_value.into();
+
+        assert_eq!(u64_from_u128.0, u128_value as u64);
+    }
+
+    #[test]
+    fn test_u128_struct_from_u64() {
+        let u64_value = 1234567890;
+        let u128_from_u64: U128 = u64_value.into();
+
+        assert_eq!(u128_from_u64.0, u64_value as u128);
+    }
+
+    #[test]
+    fn test_u64_serde() {
+        let u64_value = U64(1234567890);
+        let serialized = serde_json::to_string(&u64_value).unwrap();
+
+        assert_eq!(serialized, "1234567890");
+    }
+
+    #[test]
+    fn test_u128_serde() {
+        let u128_value = U128(12345678901234567890);
+        let serialized = serde_json::to_string(&u128_value).unwrap();
+
+        assert_eq!(serialized, "12345678901234567890");
+    }
+
+    #[test]
+    fn test_u64_from_str() {
+        let u64_value = "12345678901234567890";
+        let deserialized: U64 = serde_json::from_str(&u64_value).unwrap();
+
+        assert_eq!(deserialized, U64(12345678901234567890));
+    }
+
+    #[test]
+    fn test_u128_from_str() {
+        let u128_value = "12345678901234567890";
+        let deserialized: U128 = serde_json::from_str(&u128_value).unwrap();
+
+        assert_eq!(deserialized, U128(12345678901234567890));
+    }
+
+    #[test]
+    fn test_u64_deserde() {
+        let u64_value = 1234567890;
+        let u64_value_str = format!("\"{}\"", u64_value);
+        let deserialized: U64 = serde_json::from_str(&u64_value_str).unwrap();
+
+        assert_eq!(deserialized.0, u64_value);
+    }
+
+    #[test]
+    fn test_u128_deserde() {
+        let u128_value = 12345678901234567890;
+        let u128_value_str = format!("\"{}\"", u128_value);
+        let deserialized: U128 = serde_json::from_str(&u128_value_str).unwrap();
+
+        assert_eq!(deserialized.0, u128_value);
+    }
+}
