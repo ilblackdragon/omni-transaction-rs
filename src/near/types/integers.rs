@@ -102,6 +102,7 @@ impl<'de> Deserialize<'de> for U128 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use borsh::BorshDeserialize;
 
     #[test]
     fn test_u64_struct_from_u64() {
@@ -183,5 +184,23 @@ mod tests {
         let deserialized: U128 = serde_json::from_str(&u128_value_str).unwrap();
 
         assert_eq!(deserialized.0, u128_value);
+    }
+
+    #[test]
+    fn test_u64_borsh() {
+        let u64_value = U64(1234567890);
+        let serialized = borsh::to_vec(&u64_value).unwrap();
+        let deserialized = U64::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(deserialized, u64_value);
+    }
+
+    #[test]
+    fn test_u128_borsh() {
+        let u128_value = U128(12345678901234567890u128);
+        let serialized = borsh::to_vec(&u128_value).unwrap();
+        let deserialized = U128::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(deserialized, u128_value);
     }
 }
