@@ -21,3 +21,11 @@ test-unit:
 # Run integration tests
 test-integration:
     cargo test --test '*'
+
+# Build the project
+build:
+    cargo build
+
+# Build the project for wasm
+build-wasm:
+    cargo build --target wasm32-unknown-unknown --release
