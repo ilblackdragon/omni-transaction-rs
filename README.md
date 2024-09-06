@@ -29,7 +29,7 @@ let actions = vec![transfer_action];
 
 let near_tx = TransactionBuilder::new::<NEAR>()
         .signer_id(signer_id.to_string())
-        .signer_public_key(alice_public_key.to_public_key().unwrap())
+        .signer_public_key(signer_public_key.to_public_key().unwrap())
         .nonce(nonce)
         .receiver_id(receiver_id.to_string())
         .block_hash(block_hash_str.to_block_hash().unwrap())
