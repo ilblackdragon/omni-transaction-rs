@@ -29,7 +29,7 @@ impl Serialize for Signature {
         S: Serializer,
     {
         match self {
-            Signature::ED25519(sig) => {
+            Self::ED25519(sig) => {
                 let mut bytes = Vec::with_capacity(COMPONENT_SIZE * 2);
                 bytes.extend_from_slice(&sig.r);
                 bytes.extend_from_slice(&sig.s);
@@ -37,7 +37,7 @@ impl Serialize for Signature {
                 let encoded = bs58::encode(&bytes).into_string();
                 serializer.serialize_str(&format!("ed25519:{}", encoded))
             }
-            Signature::SECP256K1(sig) => {
+            Self::SECP256K1(sig) => {
                 let encoded = bs58::encode(&sig.0).into_string();
                 serializer.serialize_str(&format!("secp256k1:{}", encoded))
             }
