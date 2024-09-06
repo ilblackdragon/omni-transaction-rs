@@ -2,8 +2,7 @@ use bs58;
 use std::convert::TryInto;
 
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
-
-use super::types::{BlockHash, ED25519PublicKey, PublicKey, Secp256K1PublicKey};
+use crate::near::types::{BlockHash, ED25519PublicKey, PublicKey, Secp256K1PublicKey};
 
 /// Trait to extend `&str` with methods for parsing public keys and block hashes.
 pub trait PublicKeyStrExt {

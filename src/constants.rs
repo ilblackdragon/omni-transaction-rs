@@ -8,3 +8,5 @@ pub const SECP256K1_PUBLIC_KEY_LENGTH: usize = 64;
 pub const SECP256K1_SIGNATURE_LENGTH: usize = 65;
 /// Size of a single component of an Ed25519 signature.
 pub const COMPONENT_SIZE: usize = 32;
+/// Length of an Ed25519 signature
+pub const ED25519_SIGNATURE_LENGTH: usize = COMPONENT_SIZE * 2;
