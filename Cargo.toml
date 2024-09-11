@@ -33,8 +33,8 @@ alloy-rlp = { version = "0.3.8", features = ["derive"] }
 alloy-primitives = { version = "0.7.7" }
 
 # near
-near-primitives = { version = "0.25.0" }
-near-crypto = { version = "0.25.0" }
+near-primitives = { version = "0.24.1" }
+near-crypto = { version = "0.24.1" }
 near-workspaces = { version = "0.12.0", features = [
     "experimental",
     "unstable",
