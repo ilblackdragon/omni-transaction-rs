@@ -1,9 +1,12 @@
+use near_sdk::serde::{Deserialize, Serialize};
 use rlp::RlpStream;
 
 use crate::constants::EIP_1559_TYPE;
 
 use super::types::{AccessList, Address, Signature};
 
+#[derive(Serialize, Deserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct EVMTransaction {
     pub chain_id: u64,
     pub nonce: u64,
@@ -124,11 +127,6 @@ mod tests {
 
         let rlp_bytes = tx.build_for_signing();
 
-        println!(
-            "RLP Encoded Transaction usando OmniTransactionBuilder: {:?}",
-            rlp_bytes
-        );
-
         // Now let's compare with the Alloy RLP encoding
         let alloy_tx = TransactionRequest::default()
             .with_chain_id(chain_id)
@@ -149,9 +147,6 @@ mod tests {
         // Prepare the buffer and encode
         let mut buf = vec![];
         rlp_encoded.encode_for_signing(&mut buf);
-
-        println!("RLP Encoded Transaction usando Alloy: {:?}", buf);
-        println!("RLP Encoded Transaction usando la mia: {:?}", rlp_bytes);
 
         assert!(buf == rlp_bytes);
     }
@@ -181,11 +176,6 @@ mod tests {
 
         let rlp_bytes = tx.build_for_signing();
 
-        println!(
-            "RLP Encoded Transaction usando OmniTransactionBuilder: {:?}",
-            rlp_bytes
-        );
-
         // Now let's compare with the Alloy RLP encoding
         let alloy_tx = TransactionRequest::default()
             .with_chain_id(chain_id)
@@ -207,8 +197,6 @@ mod tests {
         // Prepare the buffer and encode
         let mut buf = vec![];
         rlp_encoded.encode_for_signing(&mut buf);
-
-        println!("RLP Encoded Transaction usando Alloy: {:?}", buf);
 
         assert!(buf == rlp_bytes);
     }

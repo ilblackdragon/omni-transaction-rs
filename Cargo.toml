@@ -18,26 +18,33 @@ panic = "abort"
 overflow-checks = true
 
 [dependencies]
-rlp = "0.5.2"
+rlp = "0.6.1"
 hex = "0.4.3"
 borsh = { version = "1.0.0", features = ["derive"] }
-near-sdk = "5.2.0"
-
+near-sdk = { version = "5.3.0" }
+serde-big-array = "0.5.1"
+bs58 = "0.5.1"
+serde = "1.0"
 
 [dev-dependencies]
 # ethereum
-alloy = { version = "0.2.1", features = ["full", "node-bindings", "rlp"] }
+alloy = { version = "0.3.3", features = ["full", "node-bindings", "rlp"] }
 alloy-rlp = { version = "0.3.8", features = ["derive"] }
-alloy-primitives = { version = "0.7.7" }
+alloy-primitives = { version = "0.8.3" }
 
 # near
-near-primitives = { version = "0.24.1" }
-near-crypto = { version = "0.24.1" }
+near-primitives = { version = "0.25.0" }
+near-crypto = { version = "0.25.0" }
+near-workspaces = { version = "0.13.0", features = [
+    "experimental",
+    "unstable",
+] }
+near-jsonrpc-client = { git = "https://github.com/EdsonAlcala/near-jsonrpc-client-rs", tag = "v0.12.1" }
+sha2 = "0.10.8"
 
 # async
 tokio = { version = "1.38", features = ["full"] }
 
 # misc
 eyre = "0.6"
-serde = "1.0"
 serde_json = "1.0"

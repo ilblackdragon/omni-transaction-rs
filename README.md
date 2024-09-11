@@ -1,25 +1,38 @@
 # Omni Transaction Rust library
 
-Library to be used inside Rust smart contracts to construct Transactions for different chains.
+Library to construct transactions for different chains inside Near contracts and Rust clients.
+
+[![Telegram chat][telegram-badge]][telegram-url]
+
+[telegram-badge]: https://img.shields.io/endpoint?color=neon&style=for-the-badge&url=https://tg.sumanjay.workers.dev/chain_abstraction
+[telegram-url]: https://t.me/chain_abstraction
+
+## Supported chains
+
+- NEAR
+- Ethereum
+- Bitcoin (Coming soon)
 
 ## Examples
+
+For a complete set of examples see the [examples](https://github.com/Omni-rs/examples.git) repository.
 
 Building a NEAR transaction:
 ```rust
 let signer_id = "alice.near";
-let signer_public_key = [0u8; 64];
-let nonce = 0;
+let signer_public_key = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
+let nonce = U64(0);
 let receiver_id = "bob.near";
-let block_hash = [0u8; 32];
-let transfer_action = Action::Transfer(TransferAction { deposit: 1u128 });
+let block_hash_str = "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ";
+let transfer_action = Action::Transfer(TransferAction { deposit: U128(1) });
 let actions = vec![transfer_action];
 
 let near_tx = TransactionBuilder::new::<NEAR>()
         .signer_id(signer_id.to_string())
-        .signer_public_key(PublicKey::SECP256K1(signer_public_key.into()))
+        .signer_public_key(signer_public_key.to_public_key().unwrap())
         .nonce(nonce)
         .receiver_id(receiver_id.to_string())
-        .block_hash(block_hash)
+        .block_hash(block_hash_str.to_block_hash().unwrap())
         .actions(actions)
         .build();
 

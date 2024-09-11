@@ -20,7 +20,7 @@ const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
 const GAS_LIMIT: u128 = 21_000;
 
 #[tokio::test]
-async fn test_send_raw_transaction_created_with_omnitransactionbuilder() -> Result<()> {
+async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_evm() -> Result<()> {
     let nonce: u64 = 0;
     let to_address_str = "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
     let to_address = parse_eth_address(to_address_str);
