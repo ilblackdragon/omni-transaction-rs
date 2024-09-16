@@ -15,60 +15,77 @@ use near_sdk::serde::{Deserialize, Serialize};
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
-pub enum LockTime {
-    /// A block height lock time value.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use omni_transaction::bitcoin::types::LockTime;
-    ///
-    /// let block: u32 = 741521;
-    /// let n = LockTime::from_height(block).expect("valid height");
-    /// assert!(n.is_block_height());
-    /// assert_eq!(n.to_bytes32(), block);
-    /// ```
-    Blocks(Height),
-    /// A UNIX timestamp lock time value.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use omni_transaction::types::LockTime;
-    ///
-    /// let seconds: u32 = 1653195600; // May 22nd, 5am UTC.
-    /// let n = LockTime::from_time(seconds).expect("valid time");
-    /// assert!(n.is_block_time());
-    /// assert_eq!(n.to_bytes32(), seconds);
-    /// ```
-    Seconds(Time),
-}
+pub struct LockTime(u32);
 
 impl LockTime {
     pub fn from_height(height: u32) -> Result<Self, String> {
-        if height > Height::MAX.to_u32() {
-            return Err(format!("Invalid height: {}", height));
+        if Height::is_valid(height) {
+            Ok(LockTime(height))
+        } else {
+            Err(format!("Invalid block height: {}", height))
         }
-        let height = Height::from_u32(height)?;
-        Ok(LockTime::Blocks(height))
     }
 
     pub fn from_time(time: u32) -> Result<Self, String> {
-        if time > Time::MAX.to_unix_time() {
-            return Err(format!("Invalid time: {}", time));
+        if Time::is_valid(time) {
+            Ok(LockTime(time))
+        } else {
+            Err(format!("Invalid timestamp: {}", time))
         }
-        let time = Time::from_unix_time(time)?;
-        Ok(LockTime::Seconds(time))
+    }
+
+    pub fn is_block_height(&self) -> bool {
+        Height::is_valid(self.0)
+    }
+
+    pub fn is_unix_time(&self) -> bool {
+        Time::is_valid(self.0)
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        self.0
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bitcoin::types::Height; // Ensure this import is correct
+    use crate::bitcoin::types::Height;
 
     #[test]
-    fn test_from_height() {
-        assert_eq!(LockTime::from_height(0), Ok(LockTime::Blocks(Height::ZERO)));
+    fn test_locktime_from_height() {
+        let h = 100;
+        let height = LockTime::from_height(h).unwrap();
+
+        assert!(height.is_block_height());
+        assert!(!height.is_unix_time());
+        assert_eq!(height.to_u32(), h);
+    }
+
+    #[test]
+    fn test_locktime_from_time() {
+        let time = LockTime::from_time(Time::MIN + 100).unwrap();
+
+        assert!(!time.is_block_height());
+        assert!(time.is_unix_time());
+        assert_eq!(time.to_u32(), Time::MIN + 100);
+    }
+
+    #[test]
+    fn test_locktime_invalid_height() {
+        assert!(LockTime::from_height(Height::MAX + 1).is_err());
+    }
+
+    #[test]
+    fn test_locktime_invalid_time() {
+        assert!(LockTime::from_time(Time::MIN - 1).is_err());
+    }
+
+    #[test]
+    fn test_locktime_serialization() {
+        let locktime = LockTime::from_height(100).unwrap();
+        let serialized = serde_json::to_string(&locktime).unwrap();
+        let deserialized: LockTime = serde_json::from_str(&serialized).unwrap();
+        assert_eq!(locktime, deserialized);
     }
 }
