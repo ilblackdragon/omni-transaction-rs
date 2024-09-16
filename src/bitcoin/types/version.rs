@@ -22,20 +22,14 @@ pub enum Version {
 impl Version {
     /// Serializes the version in little-endian format and writes to the provided buffer.
     pub fn encode<W: Write>(&self, w: &mut W) -> io::Result<()> {
-        let value: i32 = match self {
-            Version::One => 1,
-            Version::Two => 2,
-        };
-        let bytes: [u8; 4] = value.to_le_bytes();
-        w.write_all(&bytes)
+        w.write_all(&(*self as i32).to_le_bytes())
     }
 
     /// Deserializes the version from a buffer in little-endian format.
     pub fn decode<R: BufRead>(r: &mut R) -> io::Result<Self> {
         let mut buf = [0u8; 4];
         r.read_exact(&mut buf)?;
-        let value = i32::from_le_bytes(buf);
-        match value {
+        match i32::from_le_bytes(buf) {
             1 => Ok(Version::One),
             2 => Ok(Version::Two),
             _ => Err(io::Error::new(
@@ -47,20 +41,12 @@ impl Version {
 
     /// Returns the hexadecimal representation of the version.
     pub fn to_hex(&self) -> String {
-        let value: i32 = match self {
-            Version::One => 1,
-            Version::Two => 2,
-        };
-        hex::encode(&value.to_le_bytes())
+        hex::encode(&(*self as i32).to_le_bytes())
     }
 
     /// Serializes the version and returns the result as a Vec<u8>.
     pub fn to_vec(&self) -> Vec<u8> {
-        let value: i32 = match self {
-            Version::One => 1,
-            Version::Two => 2,
-        };
-        value.to_le_bytes().to_vec()
+        (*self as i32).to_le_bytes().to_vec()
     }
 }
 
