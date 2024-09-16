@@ -1,9 +1,7 @@
-use borsh::{BorshDeserialize, BorshSerialize};
-
 use super::constants::LOCK_TIME_THRESHOLD;
 
 /// An absolute block height, guaranteed to always contain a valid height value.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Height(u32);
 
 impl Height {
@@ -59,15 +57,6 @@ impl<'de> serde::Deserialize<'de> for Height {
         Height::from_u32(u).map_err(serde::de::Error::custom)
     }
 }
-
-// impl serde::Serialize for Height {
-//     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-//     where
-//         S: serde::Serializer,
-//     {
-//         self.to_u32().serialize(serializer)
-//     }
-// }
 
 impl serde::Serialize for Height {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

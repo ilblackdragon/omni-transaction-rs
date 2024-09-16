@@ -2,6 +2,16 @@ use super::{height::Height, time::Time};
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
+/// Locktime itself is an unsigned 4-byte integer which can be parsed two ways:
+///
+/// If less than 500 million, locktime is parsed as a block height.
+/// The transaction can be added to any block which has this height or higher.
+///
+/// If greater than or equal to 500 million, locktime is parsed using the Unix epoch time format
+/// (the number of seconds elapsed since 1970-01-01T00:00 UTC—currently over 1.395 billion).
+/// The transaction can be added to any block whose block time is greater than the locktime.
+///
+/// [Bitcoin Devguide]: https://developer.bitcoin.org/devguide/transactions.html#locktime-and-sequence-number
 #[derive(
     Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
