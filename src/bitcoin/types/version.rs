@@ -2,32 +2,31 @@ use std::io::{self, BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+
 /// The transaction version.
 ///
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
-///
-/// Standardness of the inner `i32` is not an invariant because you are free to create transactions
-/// of any version, transactions with non-standard version numbers will not be relayed by the
-/// Bitcoin network.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
 #[derive(
     Debug, Copy, PartialEq, Eq, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
-pub struct Version(pub i32);
+#[borsh(use_discriminant = true)]
+pub enum Version {
+    /// The original Bitcoin transaction version (pre-BIP-68)
+    One = 1,
+    /// The second Bitcoin transaction version (post-BIP-68)
+    Two = 2,
+}
 
 impl Version {
-    /// The original Bitcoin transaction version (pre-BIP-68).
-    pub const ONE: Self = Self(1);
-
-    /// The second Bitcoin transaction version (post-BIP-68).
-    pub const TWO: Self = Self(2);
-
-    /// Serializes the version in little-endian format.
+    /// Serializes the version in little-endian format and writes to the provided buffer.
     pub fn encode<W: Write>(&self, w: &mut W) -> io::Result<()> {
-        let bytes = self.0.to_le_bytes();
-        // Ensure the length of the bytes is 4
-        assert_eq!(bytes.len(), 4, "The length of the bytes must be 4");
+        let value: i32 = match self {
+            Version::One => 1,
+            Version::Two => 2,
+        };
+        let bytes: [u8; 4] = value.to_le_bytes();
         w.write_all(&bytes)
     }
 
@@ -35,17 +34,33 @@ impl Version {
     pub fn decode<R: BufRead>(r: &mut R) -> io::Result<Self> {
         let mut buf = [0u8; 4];
         r.read_exact(&mut buf)?;
-        Ok(Version(i32::from_le_bytes(buf)))
+        let value = i32::from_le_bytes(buf);
+        match value {
+            1 => Ok(Version::One),
+            2 => Ok(Version::Two),
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "Invalid version number",
+            )),
+        }
     }
 
     /// Returns the hexadecimal representation of the version.
     pub fn to_hex(&self) -> String {
-        hex::encode(&self.0.to_le_bytes())
+        let value: i32 = match self {
+            Version::One => 1,
+            Version::Two => 2,
+        };
+        hex::encode(&value.to_le_bytes())
     }
 
     /// Serializes the version and returns the result as a Vec<u8>.
     pub fn to_vec(&self) -> Vec<u8> {
-        self.0.to_le_bytes().to_vec()
+        let value: i32 = match self {
+            Version::One => 1,
+            Version::Two => 2,
+        };
+        value.to_le_bytes().to_vec()
     }
 }
 
@@ -56,7 +71,7 @@ mod tests {
 
     #[test]
     fn test_version_serialization() {
-        let version = Version(1);
+        let version = Version::One;
         let mut buf = Vec::new();
 
         version.encode(&mut buf).unwrap();
@@ -75,12 +90,12 @@ mod tests {
         let version = Version::decode(&mut cursor).unwrap();
 
         // Check that the deserialized version is correct
-        assert_eq!(version, Version(1));
+        assert_eq!(version, Version::One);
     }
 
     #[test]
     fn test_version_round_trip() {
-        let version = Version(2);
+        let version = Version::Two;
         let mut buf = Vec::new();
         version.encode(&mut buf).unwrap();
         let mut cursor = Cursor::new(buf);
@@ -92,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_version_to_vec() {
-        let version = Version(1);
+        let version = Version::One;
         let vec = version.to_vec();
 
         // Check that the serialized bytes are correct
@@ -101,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_version_to_hex() {
-        let version = Version(1);
+        let version = Version::One;
         let hex = version.to_hex();
 
         // Check that the hexadecimal representation is correct
@@ -109,9 +124,21 @@ mod tests {
     }
 
     #[test]
-    fn test_version_invalid() {
-        let version = Version(1);
-        let invalid_version = Version(3);
-        assert_eq!(version, invalid_version);
+    fn test_version_serde_serialization() {
+        let version = Version::One;
+        let serialized = serde_json::to_string(&version).unwrap();
+        let deserialized: Version = serde_json::from_str(&serialized).unwrap();
+
+        // Check that the version is the same after serde serialization and deserialization
+        assert_eq!(version, deserialized);
+    }
+
+    #[test]
+    fn test_version_borsh_serialization() {
+        let version = Version::One;
+        let buf = borsh::to_vec(&version).unwrap();
+        let deserialized = Version::try_from_slice(&buf).unwrap();
+
+        assert_eq!(version, deserialized);
     }
 }
