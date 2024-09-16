@@ -86,6 +86,35 @@ mod tests {
         let locktime = LockTime::from_height(100).unwrap();
         let serialized = serde_json::to_string(&locktime).unwrap();
         let deserialized: LockTime = serde_json::from_str(&serialized).unwrap();
+
         assert_eq!(locktime, deserialized);
+    }
+
+    #[test]
+    fn test_locktime_borsh_serialization() {
+        let locktime = LockTime::from_height(100).unwrap();
+        let serialized = borsh::to_vec(&locktime).unwrap();
+        let deserialized = LockTime::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(locktime, deserialized);
+    }
+
+    #[test]
+    fn test_locktime_borsh_serialization_time() {
+        let locktime = LockTime::from_time(Time::MIN + 100).unwrap();
+        let serialized = borsh::to_vec(&locktime).unwrap();
+        let deserialized = LockTime::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(locktime, deserialized);
+    }
+
+    #[test]
+    fn test_locktime_borsh_serialization_roundtrip() {
+        let original = LockTime::from_height(Height::MAX).unwrap();
+        let serialized = borsh::to_vec(&original).unwrap();
+        let deserialized = LockTime::try_from_slice(&serialized).unwrap();
+
+        assert_eq!(original, deserialized);
+        assert_eq!(original.to_u32(), deserialized.to_u32());
     }
 }
