@@ -1,3 +1,4 @@
+pub mod bitcoin;
 pub mod constants;
 pub mod evm;
 pub mod near;

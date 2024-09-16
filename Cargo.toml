@@ -26,6 +26,7 @@ serde-big-array = "0.5.1"
 bs58 = "0.5.1"
 serde = "1.0"
 
+
 [dev-dependencies]
 # ethereum
 alloy = { version = "0.3.3", features = ["full", "node-bindings", "rlp"] }
@@ -41,6 +42,15 @@ near-workspaces = { version = "0.13.0", features = [
 ] }
 near-jsonrpc-client = { git = "https://github.com/EdsonAlcala/near-jsonrpc-client-rs", tag = "v0.12.1" }
 sha2 = "0.10.8"
+
+# bitcoin
+bitcoin = { version = "0.32.0", default-features = false, features = [
+    "std",
+    "serde",
+] }
+bitcoind = { package = "bitcoind-json-rpc-regtest", version = "0.3.0", features = [
+    "26_0",
+] }
 
 # async
 tokio = { version = "1.38", features = ["full"] }
