@@ -3,8 +3,6 @@ use std::io::{self, BufRead, Write};
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
-
 /// The transaction version.
 ///
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
@@ -31,24 +29,21 @@ impl Version {
     pub fn to_vec(&self) -> Vec<u8> {
         (*self as i32).to_le_bytes().to_vec()
     }
-}
 
-impl Encodable for Version {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, io::Error> {
-        self.0.consensus_encode(w)
+    /// Serializes the version in little-endian format and writes to the provided buffer.
+    pub fn encode<W: Write>(&self, w: &mut W) -> io::Result<()> {
+        w.write_all(&(*self as i32).to_le_bytes())
     }
-}
 
-impl Decodable for Version {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
-        let vec = Vec::<u8>::decode(r)?;
-        let int = i32::from_le_bytes(vec.try_into().unwrap());
-
-        match int {
+    /// Deserializes the version from a buffer in little-endian format.
+    pub fn decode<R: BufRead>(r: &mut R) -> io::Result<Self> {
+        let mut buf = [0u8; 4];
+        r.read_exact(&mut buf)?;
+        match i32::from_le_bytes(buf) {
             1 => Ok(Version::One),
             2 => Ok(Version::Two),
-            _ => Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
+            _ => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
                 "Invalid version number",
             )),
         }
