@@ -35,3 +35,19 @@ pub struct Witness {
     /// element count but with their sizes serialized as compact size).
     indices_start: usize,
 }
+
+impl Default for Witness {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Witness {
+    pub const fn new() -> Self {
+        Witness {
+            content: Vec::new(),
+            witness_elements: 0,
+            indices_start: 0,
+        }
+    }
+}

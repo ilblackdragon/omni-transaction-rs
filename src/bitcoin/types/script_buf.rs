@@ -1,9 +1,9 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::encode::Encodable;
+use crate::bitcoin::encoding::{encode::Encodable, Decodable};
 
 /// An owned, growable script.
 ///
@@ -25,12 +25,8 @@ impl Encodable for ScriptBuf {
     }
 }
 
-// impl Decodable for ScriptBuf {
-//     fn consensus_decode_from_finite_reader<R: BufRead + ?Sized>(
-//         r: &mut R,
-//     ) -> Result<Self, encode::Error> {
-//         Ok(ScriptBuf(Decodable::consensus_decode_from_finite_reader(
-//             r,
-//         )?))
-//     }
-// }
+impl Decodable for ScriptBuf {
+    fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+        Ok(ScriptBuf(Decodable::decode_from_finite_reader(r)?))
+    }
+}

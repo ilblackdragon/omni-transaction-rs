@@ -1,11 +1,23 @@
+use super::utils::ToU64;
 use std::io::{BufRead, Read};
 
 use super::extensions::ReadExt;
 use super::utils::VarInt;
 
+/// Maximum size, in bytes, of a vector we are allowed to decode.
+pub const MAX_VEC_SIZE: usize = 4_000_000;
+
 /// Data which can be decoded in a bitcoin-consistent way.
 pub trait Decodable: Sized {
-    fn decode<R: BufRead + ?Sized>(reader: &mut R) -> Result<Self, std::io::Error>;
+    fn decode_from_finite_reader<R: BufRead + ?Sized>(
+        reader: &mut R,
+    ) -> Result<Self, std::io::Error> {
+        Self::decode(reader)
+    }
+
+    fn decode<R: BufRead + ?Sized>(reader: &mut R) -> Result<Self, std::io::Error> {
+        Self::decode_from_finite_reader(&mut reader.take(MAX_VEC_SIZE.to_u64()))
+    }
 }
 
 struct ReadBytesFromFiniteReaderOpts {

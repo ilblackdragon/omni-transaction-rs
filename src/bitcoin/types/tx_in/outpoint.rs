@@ -1,9 +1,9 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::Encodable;
+use crate::bitcoin::encoding::{Decodable, Encodable};
 
 use super::tx_id::Txid;
 
@@ -24,7 +24,7 @@ pub struct OutPoint {
 
 impl OutPoint {
     /// The number of bytes that an outpoint contributes to the size of a transaction.
-    const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
+    pub const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
 
     /// Creates a "null" `OutPoint`.
     ///
@@ -54,5 +54,26 @@ impl Encodable for OutPoint {
         len += self.txid.encode(w)?;
         len += self.vout.encode(w)?;
         Ok(len)
+    }
+}
+
+impl Decodable for OutPoint {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+        let txid = Txid::decode(r)?;
+        let vout = Decodable::decode(r)?;
+        Ok(OutPoint { txid, vout })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_decode() {
+        let outpoint = OutPoint {
+            txid: Txid::all_zeros(),
+            vout: u32::MAX,
+        };
     }
 }

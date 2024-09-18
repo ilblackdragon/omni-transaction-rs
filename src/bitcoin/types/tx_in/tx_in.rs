@@ -1,9 +1,9 @@
-use std::io::{self, Write};
+use std::io::{self, BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::Encodable;
+use crate::bitcoin::encoding::{Decodable, Encodable};
 use crate::bitcoin::types::script_buf::ScriptBuf;
 
 use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
@@ -44,5 +44,38 @@ impl Encodable for TxIn {
         len += self.script_sig.encode(w)?;
         len += self.sequence.encode(w)?;
         Ok(len)
+    }
+}
+
+impl Decodable for TxIn {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+        let previous_output = OutPoint::decode(r)?;
+        let script_sig = ScriptBuf::decode(r)?;
+        let sequence = Sequence::decode(r)?;
+        Ok(TxIn {
+            previous_output,
+            script_sig,
+            sequence,
+            witness: Witness::default(),
+        })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encode_decode() {
+        let txin = TxIn {
+            previous_output: OutPoint::null(),
+            script_sig: ScriptBuf::default(),
+            sequence: Sequence(0),
+            witness: Witness::default(),
+        };
+        let mut buf = Vec::new();
+
+        assert_eq!(txin.encode(&mut buf).unwrap(), 32);
+        assert_eq!(TxIn::decode(&mut buf.as_slice()).unwrap(), txin);
     }
 }
