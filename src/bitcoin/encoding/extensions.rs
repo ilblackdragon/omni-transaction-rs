@@ -18,8 +18,16 @@ pub trait WriteExt: Write {
 
 /// Extensions of `Read` to decode data as per Bitcoin specific format.
 pub trait ReadExt: Read {
+    /// Reads a 64-bit unsigned integer.
+    fn read_u64(&mut self) -> Result<u64, std::io::Error>;
     /// Reads a 32-bit unsigned integer.
     fn read_u32(&mut self) -> Result<u32, std::io::Error>;
+    /// Reads a 16-bit unsigned integer.
+    fn read_u16(&mut self) -> Result<u16, std::io::Error>;
+    /// Reads an 8-bit unsigned integer.
+    fn read_u8(&mut self) -> Result<u8, std::io::Error>;
+    /// Reads a byte slice.
+    fn read_slice(&mut self, slice: &mut [u8]) -> Result<(), std::io::Error>;
 }
 
 impl<W: Write + ?Sized> WriteExt for W {
@@ -37,5 +45,17 @@ impl<W: Write + ?Sized> WriteExt for W {
 }
 
 impl<R: Read + ?Sized> ReadExt for R {
+    decoder_fn!(read_u64, u64, 8);
     decoder_fn!(read_u32, u32, 4);
+    decoder_fn!(read_u16, u16, 2);
+
+    fn read_u8(&mut self) -> Result<u8, std::io::Error> {
+        let mut slice = [0u8; 1];
+        self.read_exact(&mut slice)?;
+        Ok(slice[0])
+    }
+
+    fn read_slice(&mut self, slice: &mut [u8]) -> Result<(), std::io::Error> {
+        self.read_exact(slice).map_err(std::io::Error::from)
+    }
 }

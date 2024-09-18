@@ -32,13 +32,23 @@ macro_rules! impl_array {
     };
 }
 
-/// Macro to implement `Encodable` for integer types.
+/// Macro to implement `Encodable` and `Decodable` for integer types.
 macro_rules! impl_int_encodable {
-    ($ty:ty, $read_fn:ident, $emit_fn:ident) => {
+    ($ty:ident, $meth_dec:ident, $meth_enc:ident) => {
         impl Encodable for $ty {
-            fn encode<W: Write + ?Sized>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
-                writer.$emit_fn(*self)?;
+            fn encode<W: Write + ?Sized>(
+                &self,
+                w: &mut W,
+            ) -> core::result::Result<usize, std::io::Error> {
+                w.$meth_enc(*self)?;
                 Ok(std::mem::size_of::<$ty>())
+            }
+        }
+        impl Decodable for $ty {
+            fn decode<R: BufRead + ?Sized>(
+                r: &mut R,
+            ) -> core::result::Result<Self, std::io::Error> {
+                ReadExt::$meth_dec(r)
             }
         }
     };

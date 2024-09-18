@@ -1,7 +1,8 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 
 use super::{
-    extensions::WriteExt,
+    decode::Decodable,
+    extensions::{ReadExt, WriteExt},
     macros::{impl_array, impl_int_encodable},
     utils::encode_with_size,
 };

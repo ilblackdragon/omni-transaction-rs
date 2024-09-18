@@ -1,6 +1,6 @@
-use std::io::Write;
+use std::io::{BufRead, Write};
 
-use super::{extensions::WriteExt, macros::impl_to_u64, Encodable};
+use super::{extensions::WriteExt, macros::impl_to_u64, Decodable, Encodable, ReadExt};
 
 /// A conversion trait for unsigned integer types smaller than or equal to 64-bits.
 ///
@@ -12,29 +12,14 @@ pub trait ToU64 {
 
 impl_to_u64!(u8, u16, u32, u64);
 
-macro_rules! const_assert {
-    ($x:expr $(; $message:expr)?) => {
-        const _: () = {
-            if !$x {
-                // We can't use formatting in const, only concating literals.
-                panic!(concat!("assertion ", stringify!($x), " failed" $(, ": ", $message)?))
-            }
-        };
-    }
-}
-
 impl ToU64 for usize {
     fn to_u64(self) -> u64 {
-        const_assert!(
-            core::mem::size_of::<usize>() <= 8;
-            "platforms that have usize larger than 64 bits are not supported"
-        );
         self as u64
     }
 }
 
 /// A variable-length integer type.
-pub struct VarInt(u64);
+pub struct VarInt(pub u64);
 
 impl Encodable for VarInt {
     fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
@@ -58,6 +43,63 @@ impl Encodable for VarInt {
                 self.0.encode(w)?;
                 Ok(9)
             }
+        }
+    }
+}
+
+/// Implements `From<T> for VarInt`.
+///
+/// `VarInt`s are consensus encoded as `u64`s so we store them as such. Casting from any integer size smaller than or equal to `u64` is always safe and the cast value is correctly handled by `consensus_encode`.
+macro_rules! impl_var_int_from {
+    ($($ty:tt),*) => {
+        $(
+            /// Creates a `VarInt` from a `usize` by casting the to a `u64`.
+            impl From<$ty> for VarInt {
+                fn from(x: $ty) -> Self { VarInt(x.to_u64()) }
+            }
+        )*
+    }
+}
+impl_var_int_from!(u8, u16, u32, u64, usize);
+
+impl Decodable for VarInt {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+        let n = ReadExt::read_u8(r)?;
+        match n {
+            0xFF => {
+                let x = ReadExt::read_u64(r)?;
+                if x < 0x100000000 {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "NonMinimalVarInt",
+                    ))
+                } else {
+                    Ok(VarInt::from(x))
+                }
+            }
+            0xFE => {
+                let x = ReadExt::read_u32(r)?;
+                if x < 0x10000 {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "NonMinimalVarInt",
+                    ))
+                } else {
+                    Ok(VarInt::from(x))
+                }
+            }
+            0xFD => {
+                let x = ReadExt::read_u16(r)?;
+                if x < 0xFD {
+                    Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "NonMinimalVarInt",
+                    ))
+                } else {
+                    Ok(VarInt::from(x))
+                }
+            }
+            n => Ok(VarInt::from(n)),
         }
     }
 }
