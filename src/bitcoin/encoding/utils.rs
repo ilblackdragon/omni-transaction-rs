@@ -12,8 +12,23 @@ pub trait ToU64 {
 
 impl_to_u64!(u8, u16, u32, u64);
 
+macro_rules! const_assert {
+    ($x:expr $(; $message:expr)?) => {
+        const _: () = {
+            if !$x {
+                // We can't use formatting in const, only concating literals.
+                panic!(concat!("assertion ", stringify!($x), " failed" $(, ": ", $message)?))
+            }
+        };
+    }
+}
+
 impl ToU64 for usize {
     fn to_u64(self) -> u64 {
+        const_assert!(
+            core::mem::size_of::<usize>() <= 8;
+            "platforms that have usize larger than 64 bits are not supported"
+        );
         self as u64
     }
 }
