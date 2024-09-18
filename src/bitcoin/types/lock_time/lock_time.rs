@@ -1,4 +1,6 @@
 use super::{height::Height, time::Time};
+use std::io::{self, BufRead, Write};
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 
@@ -44,6 +46,17 @@ impl LockTime {
 
     pub fn to_u32(&self) -> u32 {
         self.0
+    }
+
+    pub fn encode<W: Write>(&self, w: &mut W) -> io::Result<()> {
+        w.write_all(&self.0.to_le_bytes())
+    }
+
+    pub fn decode<R: BufRead>(r: &mut R) -> io::Result<Self> {
+        // 4 bytes
+        let mut buf: [u8; 4] = [0; 4];
+        r.read_exact(&mut buf)?;
+        Ok(LockTime(u32::from_le_bytes(buf)))
     }
 }
 
@@ -116,5 +129,15 @@ mod tests {
 
         assert_eq!(original, deserialized);
         assert_eq!(original.to_u32(), deserialized.to_u32());
+    }
+
+    #[test]
+    fn test_encode_decode() {
+        let locktime = LockTime::from_height(100).unwrap();
+        let mut buffer = Vec::new();
+        locktime.encode(&mut buffer).unwrap();
+
+        let decoded = LockTime::decode(&mut &buffer[..]).unwrap();
+        assert_eq!(locktime, decoded);
     }
 }

@@ -1,5 +1,11 @@
+use std::io::Write;
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
+
+use crate::bitcoin::encoding::Encodable;
+
+use super::tx_id::Txid;
 
 /// A reference to a transaction output.
 ///
@@ -16,12 +22,37 @@ pub struct OutPoint {
     pub vout: u32,
 }
 
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
-)]
-pub struct Txid(Hash);
+impl OutPoint {
+    /// The number of bytes that an outpoint contributes to the size of a transaction.
+    const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
 
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
-)]
-pub struct Hash([u8; 32]);
+    /// Creates a "null" `OutPoint`.
+    ///
+    /// This value is used for coinbase transactions because they don't have any previous outputs.
+    pub fn null() -> Self {
+        OutPoint {
+            txid: Txid::all_zeros(),
+            vout: u32::MAX,
+        }
+    }
+
+    /// Checks if an `OutPoint` is "null".
+    pub fn is_null(&self) -> bool {
+        *self == OutPoint::null()
+    }
+}
+
+impl Default for OutPoint {
+    fn default() -> Self {
+        OutPoint::null()
+    }
+}
+
+impl Encodable for OutPoint {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+        let mut len = 0;
+        len += self.txid.encode(w)?;
+        len += self.vout.encode(w)?;
+        Ok(len)
+    }
+}

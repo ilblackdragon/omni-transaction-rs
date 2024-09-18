@@ -1,6 +1,9 @@
+use std::io::{self, Write};
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
+use crate::bitcoin::encoding::Encodable;
 use crate::bitcoin::types::script_buf::ScriptBuf;
 
 use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
@@ -32,4 +35,14 @@ pub struct TxIn {
     /// Transaction. It *is* (de)serialized with the rest of the TxIn in other
     /// (de)serialization routines.
     pub witness: Witness,
+}
+
+impl Encodable for TxIn {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, io::Error> {
+        let mut len = 0;
+        len += self.previous_output.encode(w)?;
+        len += self.script_sig.encode(w)?;
+        len += self.sequence.encode(w)?;
+        Ok(len)
+    }
 }
