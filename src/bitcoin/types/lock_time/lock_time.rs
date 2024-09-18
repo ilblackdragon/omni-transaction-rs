@@ -1,5 +1,7 @@
+use crate::bitcoin::encoding::{Decodable, Encodable};
+
 use super::{height::Height, time::Time};
-use std::io::{self, BufRead, Write};
+use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
@@ -20,6 +22,9 @@ use near_sdk::serde::{Deserialize, Serialize};
 pub struct LockTime(u32);
 
 impl LockTime {
+    /// The number of bytes that the locktime contributes to the size of a transaction.
+    pub const SIZE: usize = 4; // Serialized length of a u32.
+
     pub fn from_height(height: u32) -> Result<Self, String> {
         if Height::is_valid(height) {
             Ok(LockTime(height))
@@ -47,12 +52,16 @@ impl LockTime {
     pub fn to_u32(&self) -> u32 {
         self.0
     }
+}
 
-    pub fn encode<W: Write>(&self, w: &mut W) -> io::Result<()> {
-        w.write_all(&self.0.to_le_bytes())
+impl Encodable for LockTime {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+        self.0.encode(w)
     }
+}
 
-    pub fn decode<R: BufRead>(r: &mut R) -> io::Result<Self> {
+impl Decodable for LockTime {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         // 4 bytes
         let mut buf: [u8; 4] = [0; 4];
         r.read_exact(&mut buf)?;
@@ -64,6 +73,11 @@ impl LockTime {
 mod tests {
     use super::*;
     use crate::bitcoin::types::Height;
+
+    #[test]
+    fn test_locktime_size() {
+        assert_eq!(LockTime::SIZE, 4);
+    }
 
     #[test]
     fn test_locktime_from_height() {
