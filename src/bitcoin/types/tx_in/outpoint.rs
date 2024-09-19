@@ -75,5 +75,12 @@ mod tests {
             txid: Txid::all_zeros(),
             vout: u32::MAX,
         };
+
+        let mut buf = Vec::new();
+        outpoint.encode(&mut buf).unwrap();
+        assert_eq!(buf.len(), OutPoint::SIZE);
+
+        let decoded_outpoint = OutPoint::decode_from_finite_reader(&mut buf.as_slice()).unwrap();
+        assert_eq!(decoded_outpoint, outpoint);
     }
 }

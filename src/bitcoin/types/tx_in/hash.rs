@@ -30,7 +30,7 @@ impl Encodable for Hash {
 
 impl Decodable for Hash {
     fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
-        let mut buf = [0; 32];
+        let mut buf: [u8; 32] = [0; 32];
         r.read_exact(&mut buf)?;
         Ok(Hash(buf))
     }

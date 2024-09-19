@@ -21,6 +21,19 @@ impl ToU64 for usize {
 /// A variable-length integer type.
 pub struct VarInt(pub u64);
 
+impl VarInt {
+    /// Returns the number of bytes this varint contributes to a transaction size.
+    ///
+    /// Returns 1 for 0..=0xFC, 3 for 0xFD..=(2^16-1), 5 for 0x10000..=(2^32-1), and 9 otherwise.
+    pub const fn size(&self) -> usize {
+        match self.0 {
+            0..=0xFC => 1,
+            0xFD..=0xFFFF => 3,
+            0x10000..=0xFFFFFFFF => 5,
+            _ => 9,
+        }
+    }
+}
 impl Encodable for VarInt {
     fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
         match self.0 {

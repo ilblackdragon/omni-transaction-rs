@@ -55,22 +55,6 @@ impl Amount {
     }
 }
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
-pub enum Denomination {
-    /// BTC
-    Bitcoin,
-    /// cBTC
-    CentiBitcoin,
-    /// mBTC
-    MilliBitcoin,
-    /// uBTC
-    MicroBitcoin,
-    /// bits
-    Bit,
-    /// satoshi
-    Satoshi,
-}
-
 impl Encodable for Amount {
     fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
         self.0.encode(w)
@@ -92,6 +76,10 @@ mod tests {
     fn test_encode_decode() {
         let amount = Amount::from_sat(1000);
         let mut buf = Vec::new();
-        assert_eq!(amount.encode(&mut buf).unwrap(), 8);
+        let size = amount.encode(&mut buf).unwrap();
+        assert_eq!(size, Amount::SIZE);
+
+        let decoded_amount = Amount::decode_from_finite_reader(&mut buf.as_slice()).unwrap();
+        assert_eq!(decoded_amount, amount);
     }
 }

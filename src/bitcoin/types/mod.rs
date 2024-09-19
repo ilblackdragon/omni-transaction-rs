@@ -7,6 +7,7 @@ pub mod version;
 pub use self::lock_time::height::Height;
 pub use self::lock_time::time::Time;
 pub use self::lock_time::LockTime;
+pub use self::script_buf::ScriptBuf;
 pub use self::tx_in::TxIn;
 pub use self::tx_out::TxOut;
 pub use self::version::Version;

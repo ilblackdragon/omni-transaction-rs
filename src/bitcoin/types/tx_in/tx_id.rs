@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
-pub struct Txid(Hash);
+pub struct Txid(pub Hash);
 
 impl Txid {
     pub fn as_byte_array(&self) -> [u8; 32] {

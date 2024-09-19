@@ -14,6 +14,22 @@ pub struct Sequence(pub u32);
 impl Sequence {
     /// The number of bytes that a sequence number contributes to the size of a transaction.
     pub const SIZE: usize = 4; // Serialized length of a u32.
+
+    /// The maximum allowable sequence number.
+    ///
+    /// This sequence number disables absolute lock time and replace-by-fee.
+    pub const MAX: Self = Sequence(0xFFFFFFFF);
+    /// Zero value sequence.
+    ///
+    /// This sequence number enables replace-by-fee and absolute lock time.
+    pub const ZERO: Self = Sequence(0);
+}
+
+impl Default for Sequence {
+    /// The default value of sequence is 0xffffffff.
+    fn default() -> Self {
+        Sequence::MAX
+    }
 }
 
 impl Encodable for Sequence {
