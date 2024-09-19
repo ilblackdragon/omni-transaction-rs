@@ -1,7 +1,12 @@
+use std::io::{BufRead, Write};
+
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::types::script_buf::ScriptBuf;
+use crate::bitcoin::{
+    encoding::{Decodable, Encodable},
+    types::script_buf::ScriptBuf,
+};
 
 use super::amount::Amount;
 
@@ -22,4 +27,24 @@ pub struct TxOut {
     pub value: Amount,
     /// The script which must be satisfied for the output to be spent.
     pub script_pubkey: ScriptBuf,
+}
+
+impl Encodable for TxOut {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+        let mut len = 0;
+        len += self.value.encode(w)?;
+        len += self.script_pubkey.encode(w)?;
+        Ok(len)
+    }
+}
+
+impl Decodable for TxOut {
+    fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+        let value = Decodable::decode_from_finite_reader(r)?;
+        let script_pubkey = Decodable::decode_from_finite_reader(r)?;
+        Ok(TxOut {
+            value,
+            script_pubkey,
+        })
+    }
 }
