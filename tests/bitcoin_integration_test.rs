@@ -1,23 +1,18 @@
 use bitcoin::absolute::Height;
-use bitcoin::bip32::{ChildNumber, DerivationPath, Xpriv, Xpub};
-// use bitcoin::address::script_pubkey::ScriptBufExt as _;
-use bitcoin::hashes::Hash;
+use bitcoin::bip32::{ChildNumber, DerivationPath, Xpub};
 use bitcoin::locktime::absolute;
-// use bitcoin::script::PushBytes;
-// use bitcoin::script::Builder;
-use bitcoin::secp256k1::{rand, Message, Secp256k1, SecretKey, Signing};
+use bitcoin::script::Builder;
+use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::sighash::{EcdsaSighashType, SighashCache};
 use bitcoin::{
     transaction, Address, Amount, Network, OutPoint, ScriptBuf, Sequence, Transaction, TxIn, TxOut,
-    Txid, WPubkeyHash, Witness,
+    Witness,
 };
-use bitcoind::AddressType;
 use bitcoind::Conf;
 
 use eyre::Result;
-use serde_json::{json, Value};
+use serde_json::json;
 use std::result::Result::Ok;
-use std::str::FromStr;
 
 const SPEND_AMOUNT: Amount = Amount::from_sat(5_000_000);
 
@@ -28,40 +23,21 @@ pub use utils::bitcoin_utils::*;
 #[tokio::test]
 async fn test_send_p2pkh() -> Result<()> {
     let conf = Conf::default();
-    println!("Configuration params for bitcoind: {:?}", conf);
-
     let bitcoind = bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap();
     let client: &bitcoind::Client = &bitcoind.client;
+
+    // Setup Bob and Alice addresses
+    let (bob_address, bob_script_pubkey) =
+        get_address_info_for(client, "Bob").expect("Failed to get address info for Bob");
 
     let (alice_address, alice_script_pubkey) =
         get_address_info_for(client, "Alice").expect("Failed to get address info for Alice");
 
-    let (bob_address, bob_script_pubkey) =
-        get_address_info_for(client, "Bob").expect("Failed to get address info for Bob");
-
     // Get descriptors
-    let descriptors: Value = client.call("listdescriptors", &[true.into()])?;
-
-    let p2pkh_descriptor = descriptors["descriptors"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|descriptor| descriptor["desc"].as_str().unwrap().contains("pkh"))
-        .expect("No P2PKH descriptor found");
-
-    println!("p2pkh_descriptor: {:?}", p2pkh_descriptor);
-
-    let desc = p2pkh_descriptor["desc"].as_str().unwrap();
-    let parts: Vec<&str> = desc.split('/').collect();
-    let master_key_str = parts[0].replace("pkh(", "").replace(")", "");
-    println!("master_key_str: {:?}", master_key_str);
+    let master_key = get_master_key_of_regtest_node(client).expect("Failed to get master key");
 
     // Initialize secp256k1 context
     let secp = Secp256k1::new();
-
-    // Derive master private key
-    let master_key = Xpriv::from_str(&master_key_str).unwrap();
-    println!("Master key: {}", master_key);
 
     // Derive child private key using path m/44h/1h/0h
     let path = "m/44h/1h/0h".parse::<DerivationPath>().unwrap();
@@ -76,7 +52,6 @@ async fn test_send_p2pkh() -> Result<()> {
     let public_key = xpub.derive_pub(&secp, &[zero, zero]).unwrap().public_key;
     let bitcoin_public_key = bitcoin::PublicKey::new(public_key);
     let derived_bob_address = Address::p2pkh(&bitcoin_public_key, Network::Regtest);
-    println!("First receiving address: {}", derived_bob_address);
 
     assert_eq!(bob_address, derived_bob_address);
 
@@ -94,7 +69,7 @@ async fn test_send_p2pkh() -> Result<()> {
     // Generate 101 blocks to the address
     client.generate_to_address(101, &bob_address)?;
 
-    // Listar UTXOs para Bob
+    // List UTXOs for Bob
     let min_conf = 1;
     let max_conf = 9999999;
     let include_unsafe = true;
@@ -109,7 +84,8 @@ async fn test_send_p2pkh() -> Result<()> {
             query_options.clone(),
         ],
     )?;
-    println!("UTXOs disponibles para Bob: {:?}", unspent_utxos_bob);
+
+    println!("UTXOs for Bob: {:?}", unspent_utxos_bob);
 
     // Get the first UTXO
     let first_unspent = unspent_utxos_bob
@@ -136,16 +112,6 @@ async fn test_send_p2pkh() -> Result<()> {
         "UTXO amount is not 50 BTC"
     );
 
-    // Get address for Alice
-    let alice_address = client
-        .get_new_address_with_type(AddressType::Legacy)
-        .unwrap()
-        .address()
-        .unwrap();
-
-    let alice_address = alice_address.require_network(Network::Regtest).unwrap();
-    println!("Alice address: {:?}", alice_address);
-
     // Generate second (alice) P2PKH address at m/0/1
     let one = ChildNumber::Normal { index: 1 };
     let alice_public_key = xpub.derive_pub(&secp, &[zero, one]).unwrap().public_key;
@@ -154,10 +120,6 @@ async fn test_send_p2pkh() -> Result<()> {
     println!("Alice derived address: {}", derived_alice_address);
 
     assert_eq!(alice_address, derived_alice_address);
-
-    // Create the script_pubkey for Alice
-    let alice_script_pubkey = ScriptBuf::from_hex(&alice_address.to_string())
-        .expect("unable to convert address to scriptbuf");
 
     let txin = TxIn {
         previous_output: OutPoint::new(
@@ -186,13 +148,13 @@ async fn test_send_p2pkh() -> Result<()> {
 
     println!("change_txout: {:?}", change_txout);
 
-    let tx = Transaction {
+    let mut tx = Transaction {
         version: transaction::Version::ONE,
         lock_time: absolute::LockTime::Blocks(Height::from_consensus(1).unwrap()),
         input: vec![txin],
         output: vec![txout, change_txout],
     };
-    println!("tx: {:?}", tx);
+    println!("tx: {:?}", tx.clone());
 
     // Get the sighash to sign.
     let sighash_type = EcdsaSighashType::All;
@@ -203,77 +165,36 @@ async fn test_send_p2pkh() -> Result<()> {
 
     println!("sighash: {:?}", sighash);
 
-    // let msg = Message::from(sighash);
-    // println!("msg: {:?}", msg);
+    let msg = Message::from(sighash);
+    println!("msg: {:?}", msg);
 
-    // let signed_tx_via_manual_message = client.sign_message(msg, &alice_address)?;
-    // println!(
-    //     "signed_tx_via_manual_message: {:?}",
-    //     signed_tx_via_manual_message
-    // );
+    let signature = secp.sign_ecdsa(&msg, &first_priv_key);
+    println!("signature: {:?}", signature);
 
-    // let txid = client.call::<String>("sendrawtransaction", &[signed_tx_hex.into()])?;
-    // println!("Transaction sent. TxID: {:?}", txid);
+    let signature = bitcoin::ecdsa::Signature {
+        signature,
+        sighash_type,
+    };
 
-    // let signed_tx_result_via_raw_tx = client.send_raw_transaction(&signed_tx).unwrap();
-    // println!(
-    //     "signed_tx_result_via_raw_tx: {:?}",
-    //     signed_tx_result_via_raw_tx
-    // );
+    println!("signature: {:?}", signature);
+    // Create the script_sig
+    let script_sig = Builder::new()
+        .push_slice(&signature.serialize())
+        .push_key(&bitcoin_public_key)
+        .into_script();
 
-    // Ahora firma la transacción
-    //    let signed_tx_result: Value = client.call("signrawtransactionwithwallet", &[unsigned_tx_hex.into()])?;
+    println!("script_sig: {:?}", script_sig);
 
-    // Después de crear tu transacción sin firmar
+    // Assign script_sig to txin
+    tx.input[0].script_sig = script_sig;
+    println!("tx: {:?}", tx);
 
-    // Serializa la transacción sin firmar a formato hexadecimal
-    // let unsigned_tx_hex = bitcoin::consensus::encode::serialize_hex(&tx);
+    // Get the signed transaction
+    let tx_signed = sighasher.into_transaction();
+    println!("tx_signed: {:?}", tx_signed);
 
-    // // Usa el método RPC signrawtransactionwithwallet para firmar la transacción
-    // let signed_tx_result: Value = client.call("signrawtransactionwithwallet", &[unsigned_tx_hex.into()])?;
-
-    // // Extrae la transacción firmada del resultado
-    // let signed_tx_hex = signed_tx_result["hex"].as_str().expect("No signed transaction hex found");
-
-    // // Deserializa la transacción firmada de vuelta a un objeto Transaction
-    // let signed_tx: Transaction = bitcoin::consensus::encode::deserialize(&hex::decode(signed_tx_hex)?)?;
-
-    // println!("Signed transaction: {:?}", signed_tx);
-
-    // // Ahora puedes enviar esta transacción firmada
-
-    // let signature = secp.sign_ecdsa(&msg, &sk);
-    // let signature = secp.sign_ecdsa(&msg, &sk);
-
-    // println!("signature: {:?}", signature);
-
-    // let signature = bitcoin::ecdsa::Signature {
-    //     signature,
-    //     sighash_type,
-    // };
-
-    // println!("signature: {:?}", signature);
-    // // Create the script_sig
-    // let script_sig = Builder::new()
-    //     .push_slice(&signature.serialize())
-    //     .push_key(&pk)
-    //     .into_script();
-
-    // println!("script_sig: {:?}", script_sig);
-
-    // // Asignar script_sig a txin
-    // tx.input[0].script_sig = script_sig;
-
-    // println!("tx: {:?}", tx);
-
-    // // Get the signed transaction
-    // // let tx_signed = sighasher.into_transaction();
-
-    // // println!("tx_signed: {:?}", tx_signed);
-
-    // let raw_tx_result = client.send_raw_transaction(&tx).unwrap();
-
-    // println!("raw_tx_result: {:?}", raw_tx_result);
+    let raw_tx_result = client.send_raw_transaction(&tx_signed).unwrap();
+    println!("raw_tx_result: {:?}", raw_tx_result);
 
     Ok(())
 }
