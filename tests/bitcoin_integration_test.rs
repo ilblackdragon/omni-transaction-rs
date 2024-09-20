@@ -1,7 +1,7 @@
 use bitcoin::absolute::Height;
 use bitcoin::bip32::{ChildNumber, DerivationPath, Xpub};
 use bitcoin::locktime::absolute;
-use bitcoin::script::Builder;
+use bitcoin::script::{Builder, Instruction};
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::sighash::{EcdsaSighashType, SighashCache};
 use bitcoin::{
@@ -14,14 +14,14 @@ use eyre::Result;
 use serde_json::json;
 use std::result::Result::Ok;
 
-const SPEND_AMOUNT: Amount = Amount::from_sat(5_000_000);
+const SPEND_AMOUNT: Amount = Amount::from_sat(500_000_000);
 
 mod utils;
 
 pub use utils::bitcoin_utils::*;
 
 #[tokio::test]
-async fn test_send_p2pkh() -> Result<()> {
+async fn test_send_p2pkh_using_rust_bitcoin() -> Result<()> {
     let conf = Conf::default();
     let bitcoind = bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap();
     let client: &bitcoind::Client = &bitcoind.client;
@@ -158,9 +158,9 @@ async fn test_send_p2pkh() -> Result<()> {
 
     // Get the sighash to sign.
     let sighash_type = EcdsaSighashType::All;
-    let sighasher = SighashCache::new(tx.clone());
+    let sighasher = SighashCache::new(&mut tx);
     let sighash = sighasher
-        .legacy_signature_hash(0, &alice_script_pubkey, sighash_type.to_u32())
+        .legacy_signature_hash(0, &bob_script_pubkey, sighash_type.to_u32())
         .expect("failed to create sighash");
 
     println!("sighash: {:?}", sighash);
@@ -171,56 +171,101 @@ async fn test_send_p2pkh() -> Result<()> {
     let signature = secp.sign_ecdsa(&msg, &first_priv_key);
     println!("signature: {:?}", signature);
 
+    // Verify signature
+    let is_valid = secp.verify_ecdsa(&msg, &signature, &public_key).is_ok();
+    println!("Signature valid: {:?}", is_valid);
+
+    assert!(is_valid, "The signature should be valid");
+
     let signature = bitcoin::ecdsa::Signature {
         signature,
         sighash_type,
     };
 
-    println!("signature: {:?}", signature);
     // Create the script_sig
     let script_sig = Builder::new()
         .push_slice(&signature.serialize())
         .push_key(&bitcoin_public_key)
         .into_script();
 
+    // Verify the script_sig
     println!("script_sig: {:?}", script_sig);
+
+    // Decode the script_sig to verify its contents
+    let mut iter = script_sig.instructions().peekable();
+
+    // Check the signature
+    if let Some(Ok(Instruction::PushBytes(sig_bytes))) = iter.next() {
+        println!("Signature in script_sig: {:?}", sig_bytes);
+
+        assert_eq!(
+            sig_bytes.as_bytes(),
+            signature.serialize().to_vec().as_slice(),
+            "Signature mismatch in script_sig"
+        );
+    } else {
+        panic!("Expected signature push in script_sig");
+    }
+
+    // Check the public key
+    if let Some(Ok(Instruction::PushBytes(pubkey_bytes))) = iter.next() {
+        println!("Public key in script_sig: {:?}", pubkey_bytes);
+        assert_eq!(
+            pubkey_bytes.as_bytes(),
+            bitcoin_public_key.to_bytes(),
+            "Public key mismatch in script_sig"
+        );
+    } else {
+        panic!("Expected public key push in script_sig");
+    }
+
+    // Ensure there are no more instructions
+    assert!(iter.next().is_none(), "Unexpected data in script_sig");
+
+    println!("script_sig verification passed");
 
     // Assign script_sig to txin
     tx.input[0].script_sig = script_sig;
-    println!("tx: {:?}", tx);
 
-    // Get the signed transaction
-    let tx_signed = sighasher.into_transaction();
+    // Finalize the transaction
+    let tx_signed = tx;
+
     println!("tx_signed: {:?}", tx_signed);
 
     let raw_tx_result = client.send_raw_transaction(&tx_signed).unwrap();
     println!("raw_tx_result: {:?}", raw_tx_result);
 
+    client.generate_to_address(101, &bob_address)?;
+
+    assert_utxos_for_address(client, alice_address, 1);
+
     Ok(())
 }
 
-// #[tokio::test]
-// async fn test_send_p2wpkh() -> Result<()> {
-//     let bitcoind = BitcoinD::from_downloaded().unwrap();
-//     let client = &bitcoind.client;
+fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_of_utxos: usize) {
+    let min_conf = 1;
+    let max_conf = 9999999;
+    let include_unsafe = true;
+    let query_options = json!({});
 
-//     // Generar una nueva dirección SegWit
-//     let address = client.call::<String>("getnewaddress", &[json!("bech32")])?;
-//     println!("Nueva dirección SegWit: {}", address);
+    let unspent_utxos: Vec<serde_json::Value> = client
+        .call(
+            "listunspent",
+            &[
+                json!(min_conf),
+                json!(max_conf),
+                json!(vec![address.to_string()]),
+                json!(include_unsafe),
+                query_options.clone(),
+            ],
+        )
+        .unwrap();
 
-//     // Generar algunos bloques para obtener monedas
-//     client.call::<Vec<String>>("generatetoaddress", &[json!(101), json!(address)])?;
-
-//     // Listar UTXOs
-//     let unspent: Vec<serde_json::Value> = client.call("listunspent", &[])?;
-//     println!("UTXOs disponibles: {:?}", unspent);
-
-//     // Obtener el primer UTXO
-//     let first_unspent = unspent.into_iter().next().expect("There should be at least one unspent output");
-//     println!("Primer UTXO: {:?}", first_unspent);
-
-//     // Crear y firmar la transacción P2WPKH
-//     // Aquí deberías agregar el código para crear y firmar la transacción P2WPKH
-
-//     Ok(())
-// }
+    assert!(
+        unspent_utxos.len() == number_of_utxos,
+        "Expected {} UTXOs for address {}, but found {}",
+        number_of_utxos,
+        address.to_string(),
+        unspent_utxos.len()
+    );
+}
