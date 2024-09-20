@@ -19,13 +19,11 @@ use serde_json::{json, Value};
 use std::result::Result::Ok;
 use std::str::FromStr;
 
-const DUMMY_UTXO_AMOUNT: Amount = Amount::from_sat(20_000_000);
 const SPEND_AMOUNT: Amount = Amount::from_sat(5_000_000);
-const CHANGE_AMOUNT: Amount = Amount::from_sat(14_999_000); // 1000 sat fee.
 
-// TESTS
-// P2PKH
-// P2WPKH
+mod utils;
+
+pub use utils::bitcoin_utils::*;
 
 #[tokio::test]
 async fn test_send_p2pkh() -> Result<()> {
@@ -33,16 +31,13 @@ async fn test_send_p2pkh() -> Result<()> {
     println!("Configuration params for bitcoind: {:?}", conf);
 
     let bitcoind = bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap();
-    let client = &bitcoind.client;
+    let client: &bitcoind::Client = &bitcoind.client;
 
-    let bob_address = client
-        .get_new_address_with_type(AddressType::Legacy)
-        .unwrap()
-        .address()
-        .unwrap();
+    let (alice_address, alice_script_pubkey) =
+        get_address_info_for(client, "Alice").expect("Failed to get address info for Alice");
 
-    let bob_address = bob_address.require_network(Network::Regtest).unwrap();
-    println!("Bob address: {:?}", bob_address);
+    let (bob_address, bob_script_pubkey) =
+        get_address_info_for(client, "Bob").expect("Failed to get address info for Bob");
 
     // Get descriptors
     let descriptors: Value = client.call("listdescriptors", &[true.into()])?;
@@ -160,75 +155,53 @@ async fn test_send_p2pkh() -> Result<()> {
 
     assert_eq!(alice_address, derived_alice_address);
 
-    // let secp = Secp256k1::new();
-    // let sk = SecretKey::new(&mut rand::thread_rng());
-    // let pk = bitcoin::PublicKey::new(sk.public_key(&secp));
-    // let hetman_address = Address::p2pkh(&pk, Network::Regtest);
-    // println!("Hetman address: {:?}", hetman_address);
+    // Create the script_pubkey for Alice
+    let alice_script_pubkey = ScriptBuf::from_hex(&alice_address.to_string())
+        .expect("unable to convert address to scriptbuf");
 
-    // Check if the UTXO amount is 50 BTC
+    let txin = TxIn {
+        previous_output: OutPoint::new(
+            first_unspent["txid"].as_str().unwrap().parse()?,
+            first_unspent["vout"].as_u64().unwrap() as u32,
+        ),
+        script_sig: ScriptBuf::new(), // Initially empty, will be filled later with the signature
+        sequence: Sequence::MAX,
+        witness: Witness::default(),
+    };
 
-    // let txin = TxIn {
-    //     previous_output: OutPoint::new(
-    //         first_unspent["txid"].as_str().unwrap().parse()?,
-    //         first_unspent["vout"].as_u64().unwrap() as u32,
-    //     ),
-    //     script_sig: ScriptBuf::new(), // Initially empty, will be filled later with the signature
-    //     sequence: Sequence::MAX,
-    //     witness: Witness::default(),
-    // };
+    let txout = TxOut {
+        value: SPEND_AMOUNT,
+        script_pubkey: alice_script_pubkey.clone(),
+    };
 
-    // let txout = TxOut {
-    //     value: SPEND_AMOUNT,
-    //     script_pubkey: bob_script_pubkey.clone(),
-    // };
+    println!("txout: {:?}", txout);
 
-    // println!("txout: {:?}", txout);
+    let change_amount: Amount = utxo_amount - SPEND_AMOUNT - Amount::from_sat(1000); // 1000 satoshis for fee
+    println!("change_amount: {:?}", change_amount);
 
-    // let change_amount = utxo_amount - SPEND_AMOUNT - Amount::from_sat(1000); // 1000 satoshis for fee
+    let change_txout = TxOut {
+        value: change_amount,
+        script_pubkey: bob_script_pubkey.clone(),
+    };
 
-    // println!("change_amount: {:?}", change_amount);
+    println!("change_txout: {:?}", change_txout);
 
-    // let change_txout = TxOut {
-    //     value: change_amount,
-    //     script_pubkey: alice_script_pubkey.clone(),
-    // };
-
-    // let tx = Transaction {
-    //     version: transaction::Version::ONE,
-    //     lock_time: absolute::LockTime::Blocks(Height::from_consensus(1).unwrap()),
-    //     input: vec![txin],
-    //     output: vec![txout, change_txout],
-    // };
-    // println!("tx: {:?}", tx);
-
-    // let unsigned_tx_hex = bitcoin::consensus::encode::serialize_hex(&tx);
-    // println!("unsigned_tx_hex: {:?}", unsigned_tx_hex);
-
-    // // client.call("loadwallet", &["alice".into()])?;
-
-    // let signed_tx_result: Value =
-    //     client.call("signrawtransactionwithwallet", &[unsigned_tx_hex.into()])?;
-
-    // let signed_tx_hex = signed_tx_result["hex"]
-    //     .as_str()
-    //     .expect("No signed transaction hex found");
-
-    // println!("signed_tx_hex: {:?}", signed_tx_hex);
-
-    // let signed_tx: Transaction =
-    //     bitcoin::consensus::encode::deserialize(&hex::decode(signed_tx_hex)?)?;
-
-    // println!("signed_tx: {:?}", signed_tx);
+    let tx = Transaction {
+        version: transaction::Version::ONE,
+        lock_time: absolute::LockTime::Blocks(Height::from_consensus(1).unwrap()),
+        input: vec![txin],
+        output: vec![txout, change_txout],
+    };
+    println!("tx: {:?}", tx);
 
     // Get the sighash to sign.
-    // let sighash_type = EcdsaSighashType::All;
-    // let sighasher = SighashCache::new(tx.clone());
-    // let sighash = sighasher
-    //     .legacy_signature_hash(0, &alice_script_pubkey, sighash_type.to_u32())
-    //     .expect("failed to create sighash");
+    let sighash_type = EcdsaSighashType::All;
+    let sighasher = SighashCache::new(tx.clone());
+    let sighash = sighasher
+        .legacy_signature_hash(0, &alice_script_pubkey, sighash_type.to_u32())
+        .expect("failed to create sighash");
 
-    // println!("sighash: {:?}", sighash);
+    println!("sighash: {:?}", sighash);
 
     // let msg = Message::from(sighash);
     // println!("msg: {:?}", msg);
