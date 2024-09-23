@@ -1,14 +1,16 @@
 /// Minimal required Bitcoin types, inspired by https://github.com/rust-bitcoin/rust-bitcoin
-pub mod lock_time;
-pub mod script_buf;
-pub mod tx_in;
-pub mod tx_out;
-pub mod version;
+mod lock_time;
+mod script_buf;
+mod sighash;
+mod tx_in;
+mod tx_out;
+mod version;
 
 pub use self::lock_time::height::Height;
 pub use self::lock_time::time::Time;
 pub use self::lock_time::LockTime;
 pub use self::script_buf::ScriptBuf;
+pub use self::sighash::EcdsaSighashType;
 pub use self::tx_in::Hash;
 pub use self::tx_in::OutPoint;
 pub use self::tx_in::Sequence;
