@@ -6,9 +6,7 @@ use near_sdk::serde::{Deserialize, Serialize};
 use super::{
     constants::{SEGWIT_FLAG, SEGWIT_MARKER},
     encoding::{decode::MAX_VEC_SIZE, utils::VarInt, Decodable, Encodable, ToU64},
-    types::{
-        EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version, Witness,
-    },
+    types::{EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -53,9 +51,7 @@ impl BitcoinTransaction {
             }
         }
 
-        let buffer = self.encode_fields();
-
-        buffer
+        self.encode_fields()
     }
 
     fn encode_fields(&self) -> Vec<u8> {

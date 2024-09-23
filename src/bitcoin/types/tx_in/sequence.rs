@@ -18,11 +18,11 @@ impl Sequence {
     /// The maximum allowable sequence number.
     ///
     /// This sequence number disables absolute lock time and replace-by-fee.
-    pub const MAX: Self = Sequence(0xFFFFFFFF);
+    pub const MAX: Self = Self(0xFFFFFFFF);
     /// Zero value sequence.
     ///
     /// This sequence number enables replace-by-fee and absolute lock time.
-    pub const ZERO: Self = Sequence(0);
+    pub const ZERO: Self = Self(0);
 }
 
 impl Default for Sequence {

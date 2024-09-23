@@ -18,13 +18,13 @@ impl Hash {
 
     pub fn from_hex(hex: &str) -> Result<Self, hex::FromHexError> {
         let bytes = hex::decode(hex)?;
-        Ok(Hash(bytes.try_into().expect("Invalid length")))
+        Ok(Self(bytes.try_into().expect("Invalid length")))
     }
 }
 
 impl Hash {
-    pub fn all_zeros() -> Self {
-        Hash([0; 32])
+    pub const fn all_zeros() -> Self {
+        Self([0; 32])
     }
 }
 
@@ -39,7 +39,7 @@ impl Decodable for Hash {
     fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         let mut buf: [u8; 32] = [0; 32];
         r.read_exact(&mut buf)?; // Read 32 bytes from the buffer
-        Ok(Hash(
+        Ok(Self(
             buf.iter()
                 .rev() // Reverse the bytes to convert from little-endian to big-endian
                 .cloned()

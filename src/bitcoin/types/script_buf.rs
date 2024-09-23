@@ -27,6 +27,6 @@ impl Encodable for ScriptBuf {
 
 impl Decodable for ScriptBuf {
     fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
-        Ok(ScriptBuf(Decodable::decode_from_finite_reader(r)?))
+        Ok(Self(Decodable::decode_from_finite_reader(r)?))
     }
 }

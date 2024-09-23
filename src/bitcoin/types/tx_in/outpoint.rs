@@ -27,7 +27,7 @@ impl OutPoint {
     pub const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
 
     pub const fn new(txid: Txid, vout: u32) -> OutPoint {
-        OutPoint { txid, vout }
+        Self { txid, vout }
     }
 
     /// Creates a "null" `OutPoint`.
@@ -48,7 +48,7 @@ impl OutPoint {
 
 impl Default for OutPoint {
     fn default() -> Self {
-        OutPoint::null()
+        Self::null()
     }
 }
 

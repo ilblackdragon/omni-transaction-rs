@@ -58,7 +58,7 @@ impl Witness {
     }
 
     /// Returns `true` if the witness contains no element.
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.witness_elements == 0
     }
 }
@@ -87,7 +87,7 @@ impl Decodable for Witness {
             ));
         }
         if witness_elements == 0 {
-            Ok(Witness::default())
+            Ok(Self::default())
         } else {
             // Leave space at the head for element positions.
             // We will rotate them to the end of the Vec later.

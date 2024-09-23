@@ -48,8 +48,8 @@ impl Decodable for Version {
         let int = i32::from_le_bytes(buf);
 
         match int {
-            1 => Ok(Version::One),
-            2 => Ok(Version::Two),
+            1 => Ok(Self::One),
+            2 => Ok(Self::Two),
             _ => Err(std::io::Error::new(
                 std::io::ErrorKind::InvalidData,
                 "Invalid version number",

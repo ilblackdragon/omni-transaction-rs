@@ -14,7 +14,7 @@ impl Time {
     pub const MAX: u32 = u32::MAX;
 
     /// Returns true if `n` is a valid UNIX timestamp i.e., greater than or equal to 500,000,000.
-    pub fn is_valid(n: u32) -> bool {
+    pub const fn is_valid(n: u32) -> bool {
         n >= LOCK_TIME_THRESHOLD
     }
 }

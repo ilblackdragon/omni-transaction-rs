@@ -42,7 +42,7 @@ impl Decodable for TxOut {
     fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         let value = Decodable::decode_from_finite_reader(r)?;
         let script_pubkey = Decodable::decode_from_finite_reader(r)?;
-        Ok(TxOut {
+        Ok(Self {
             value,
             script_pubkey,
         })

@@ -27,19 +27,19 @@ impl Amount {
     /// The maximum value allowed as an amount. Useful for sanity checking.
     pub const MAX_MONEY: Amount = Self::from_int_btc(21_000_000);
     /// The minimum value of an amount.
-    pub const MIN: Amount = Amount::ZERO;
+    pub const MIN: Amount = Self::ZERO;
     /// The maximum value of an amount.
-    pub const MAX: Amount = Amount(u64::MAX);
+    pub const MAX: Self = Self(u64::MAX);
     /// The number of bytes that an amount contributes to the size of a transaction.
     pub const SIZE: usize = 8; // Serialized length of a u64.
 
     /// Creates an [`Amount`] with satoshi precision and the given number of satoshis.
-    pub const fn from_sat(satoshi: u64) -> Amount {
+    pub const fn from_sat(satoshi: u64) -> Self {
         Amount(satoshi)
     }
 
     /// Gets the number of satoshis in this [`Amount`].
-    pub fn to_sat(self) -> u64 {
+    pub const fn to_sat(self) -> u64 {
         self.0
     }
 
@@ -50,9 +50,9 @@ impl Amount {
     ///
     /// The function panics if the argument multiplied by the number of sats
     /// per bitcoin overflows a u64 type.
-    pub const fn from_int_btc(btc: u64) -> Amount {
+    pub const fn from_int_btc(btc: u64) -> Self {
         match btc.checked_mul(100_000_000) {
-            Some(amount) => Amount::from_sat(amount),
+            Some(amount) => Self::from_sat(amount),
             None => panic!("checked_mul overflowed"),
         }
     }
@@ -60,14 +60,14 @@ impl Amount {
     /// Checked addition.
     ///
     /// Returns [`None`] if overflow occurred.
-    pub fn checked_add(self, rhs: Amount) -> Option<Amount> {
+    pub fn checked_add(self, rhs: Self) -> Option<Self> {
         self.0.checked_add(rhs.0).map(Amount)
     }
 
     /// Checked subtraction.
     ///
     /// Returns [`None`] if overflow occurred.
-    pub fn checked_sub(self, rhs: Amount) -> Option<Amount> {
+    pub fn checked_sub(self, rhs: Self) -> Option<Self> {
         self.0.checked_sub(rhs.0).map(Amount)
     }
 }
@@ -81,22 +81,22 @@ impl Encodable for Amount {
 impl Decodable for Amount {
     fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         let value = Decodable::decode_from_finite_reader(r)?;
-        Ok(Amount::from_sat(value))
+        Ok(Self::from_sat(value))
     }
 }
 
 impl ops::Add for Amount {
-    type Output = Amount;
+    type Output = Self;
 
-    fn add(self, rhs: Amount) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
         self.checked_add(rhs).expect("Amount addition error")
     }
 }
 
 impl ops::Sub for Amount {
-    type Output = Amount;
+    type Output = Self;
 
-    fn sub(self, rhs: Amount) -> Self::Output {
+    fn sub(self, rhs: Self) -> Self::Output {
         self.checked_sub(rhs).expect("Amount subtraction error")
     }
 }

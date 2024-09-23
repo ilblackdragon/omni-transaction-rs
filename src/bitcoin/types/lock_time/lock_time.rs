@@ -27,7 +27,7 @@ impl LockTime {
 
     pub fn from_height(height: u32) -> Result<Self, String> {
         if Height::is_valid(height) {
-            Ok(LockTime(height))
+            Ok(Self(height))
         } else {
             Err(format!("Invalid block height: {}", height))
         }
@@ -35,7 +35,7 @@ impl LockTime {
 
     pub fn from_time(time: u32) -> Result<Self, String> {
         if Time::is_valid(time) {
-            Ok(LockTime(time))
+            Ok(Self(time))
         } else {
             Err(format!("Invalid timestamp: {}", time))
         }
@@ -49,7 +49,7 @@ impl LockTime {
         Time::is_valid(self.0)
     }
 
-    pub fn to_u32(&self) -> u32 {
+    pub const fn to_u32(&self) -> u32 {
         self.0
     }
 }
@@ -65,7 +65,7 @@ impl Decodable for LockTime {
         // 4 bytes
         let mut buf: [u8; 4] = [0; 4];
         r.read_exact(&mut buf)?;
-        Ok(LockTime(u32::from_le_bytes(buf)))
+        Ok(Self(u32::from_le_bytes(buf)))
     }
 }
 

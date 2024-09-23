@@ -52,7 +52,7 @@ impl Decodable for TxIn {
         let previous_output = OutPoint::decode(r)?;
         let script_sig = ScriptBuf::decode(r)?;
         let sequence = Sequence::decode(r)?;
-        Ok(TxIn {
+        Ok(Self {
             previous_output,
             script_sig,
             sequence,
