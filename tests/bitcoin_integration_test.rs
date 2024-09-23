@@ -112,6 +112,7 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
     // Calculate the sighash
     let sighash_omni = sha256d::Hash::hash(&encoded_data);
+    let msg_omni = Message::from_digest_slice(sighash_omni.as_byte_array()).unwrap();
 
     // -------------------------------------------------------------------------------------------------
     // Create an equivalent transaction using the Bitcoin library
@@ -162,41 +163,45 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         "sighash btc is not equal to sighash"
     );
 
-    // Sign the sighash and broadcast the transaction
+    // Sign the sighash and broadcast the transaction using the Omni library
     let secp = Secp256k1::new();
-    let msg_btc = Message::from(sighash_btc);
-    let signature_btc = secp.sign_ecdsa(&msg_btc, &bob.private_key);
-    // println!("signature btc: {:?}", signature_btc);
+    let signature_omni = secp.sign_ecdsa(&msg_omni, &bob.private_key);
 
     // Verify signature
     let is_valid = secp
-        .verify_ecdsa(&msg_btc, &signature_btc, &bob.public_key)
+        .verify_ecdsa(&msg_omni, &signature_omni, &bob.public_key)
         .is_ok();
-    println!("Signature valid: {:?}", is_valid);
 
     assert!(is_valid, "The signature should be valid");
 
     let signature = bitcoin::ecdsa::Signature {
-        signature: signature_btc,
+        signature: signature_omni,
         sighash_type,
     };
 
     // Create the script_sig
-    let script_sig_btc = Builder::new()
+    let script_sig_new = Builder::new()
         .push_slice(&signature.serialize())
         .push_key(&bob.bitcoin_public_key)
         .into_script();
 
     // Assign script_sig to txin
-    tx_btc.input[0].script_sig = script_sig_btc;
+    omni_tx.input[0].script_sig = OmniScriptBuf(script_sig_new.as_bytes().to_vec());
 
-    // Finalize the transaction
-    let tx_signed_btc = tx_btc;
-    let tx_signed_btc_hex = hex::encode(bitcoin::consensus::encode::serialize(&tx_signed_btc));
+    let encoded_omni_tx = omni_tx.build_for_signing();
 
-    // assert_eq!(new_tx_hex, tx_signed_btc_hex);
+    // Convert the transaction to a hexadecimal string
+    let hex_omni_tx = hex::encode(encoded_omni_tx);
 
-    // -------------------------------------------------------------------------------------------------
+    let raw_tx_result: serde_json::Value = client
+        .call("sendrawtransaction", &[json!(hex_omni_tx)])
+        .unwrap();
+
+    println!("raw_tx_result: {:?}", raw_tx_result);
+
+    client.generate_to_address(101, &bob.address)?;
+
+    assert_utxos_for_address(client, alice.address, 1);
 
     Ok(())
 }
