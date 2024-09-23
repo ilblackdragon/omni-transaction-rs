@@ -6,7 +6,9 @@ use near_sdk::serde::{Deserialize, Serialize};
 use super::{
     constants::{SEGWIT_FLAG, SEGWIT_MARKER},
     encoding::{decode::MAX_VEC_SIZE, utils::VarInt, Decodable, Encodable, ToU64},
-    types::{EcdsaSighashType, LockTime, ScriptBuf, TxIn, TxOut, Version},
+    types::{
+        EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version, Witness,
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -28,32 +30,7 @@ pub struct BitcoinTransaction {
 
 impl BitcoinTransaction {
     pub fn build_for_signing(&self, sighash_type: EcdsaSighashType) -> Vec<u8> {
-        let mut buffer = Vec::new();
-
-        // Version
-        self.version.encode(&mut buffer).unwrap();
-
-        let uses_segwit_serialization =
-            self.input.iter().any(|input| !input.witness.is_empty()) || self.input.is_empty();
-
-        // BIP-141 (segwit) transaction serialization should include marker and flag.
-        if uses_segwit_serialization {
-            buffer.push(SEGWIT_MARKER);
-            buffer.push(SEGWIT_FLAG);
-        }
-
-        self.input.encode(&mut buffer).unwrap();
-        self.output.encode(&mut buffer).unwrap();
-
-        // BIP-141 (segwit) transaction serialization also contains witness data.
-        if uses_segwit_serialization {
-            for input in &self.input {
-                input.witness.encode(&mut buffer).unwrap();
-            }
-        }
-
-        // Locktime
-        self.lock_time.encode(&mut buffer).unwrap();
+        let mut buffer = self.encode_fields();
 
         // Sighash type
         buffer.extend_from_slice(&(sighash_type as u32).to_le_bytes());
@@ -61,7 +38,27 @@ impl BitcoinTransaction {
         buffer
     }
 
-    pub fn build_with_script_sig(&self, script_sig: ScriptBuf) -> Vec<u8> {
+    pub fn build_with_script_sig(
+        &mut self,
+        input_index: usize,
+        script_sig: ScriptBuf,
+        tx_type: TransactionType,
+    ) -> Vec<u8> {
+        match tx_type {
+            TransactionType::P2PKH | TransactionType::P2SH => {
+                self.input[input_index].script_sig = script_sig;
+            }
+            _ => {
+                panic!("Not implemented");
+            }
+        }
+
+        let buffer = self.encode_fields();
+
+        buffer
+    }
+
+    fn encode_fields(&self) -> Vec<u8> {
         let mut buffer = Vec::new();
 
         // Version
@@ -88,50 +85,6 @@ impl BitcoinTransaction {
 
         // Locktime
         self.lock_time.encode(&mut buffer).unwrap();
-
-        buffer
-    }
-
-    pub fn sighash(
-        &self,
-        input_index: usize,
-        script_pubkey: &ScriptBuf,
-        sighash_type: u32,
-    ) -> Vec<u8> {
-        let mut buffer = Vec::new();
-
-        // Version
-        self.version.encode(&mut buffer).unwrap();
-
-        let uses_segwit_serialization =
-            self.input.iter().any(|input| !input.witness.is_empty()) || self.input.is_empty();
-
-        // BIP-141 (segwit) transaction serialization should include marker and flag.
-        if uses_segwit_serialization {
-            buffer.push(SEGWIT_MARKER);
-            buffer.push(SEGWIT_FLAG);
-        }
-
-        // Inputs
-        (self.input.len() as u32).encode(&mut buffer).unwrap();
-        for (i, input) in self.input.iter().enumerate() {
-            input.previous_output.encode(&mut buffer).unwrap();
-            if i == input_index {
-                script_pubkey.encode(&mut buffer).unwrap();
-            } else {
-                0u8.encode(&mut buffer).unwrap(); // Empty script
-            }
-            input.sequence.encode(&mut buffer).unwrap();
-        }
-
-        // Outputs (no changes needed here)
-        self.output.encode(&mut buffer).unwrap();
-
-        // Locktime
-        self.lock_time.encode(&mut buffer).unwrap();
-
-        // Sighash type
-        buffer.write_all(&sighash_type.to_le_bytes()).unwrap();
 
         buffer
     }

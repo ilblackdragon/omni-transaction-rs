@@ -9,8 +9,8 @@ use omni_transaction::bitcoin::bitcoin_transaction::BitcoinTransaction;
 use omni_transaction::bitcoin::types::{
     Amount as OmniAmount, EcdsaSighashType as OmniSighashType, Hash as OmniHash,
     LockTime as OmniLockTime, OutPoint as OmniOutPoint, ScriptBuf as OmniScriptBuf,
-    Sequence as OmniSequence, TxIn as OmniTxIn, TxOut as OmniTxOut, Txid as OmniTxid,
-    Version as OmniVersion, Witness as OmniWitness,
+    Sequence as OmniSequence, TransactionType, TxIn as OmniTxIn, TxOut as OmniTxOut,
+    Txid as OmniTxid, Version as OmniVersion, Witness as OmniWitness,
 };
 use omni_transaction::transaction_builder::TransactionBuilder;
 use omni_transaction::transaction_builder::TxBuilder;
@@ -126,9 +126,7 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
     // Assign script_sig to txin
     let omni_script_sig = OmniScriptBuf(script_sig_new.as_bytes().to_vec());
-    omni_tx.input[0].script_sig = omni_script_sig.clone();
-
-    let encoded_omni_tx = omni_tx.build_with_script_sig(omni_script_sig);
+    let encoded_omni_tx = omni_tx.build_with_script_sig(0, omni_script_sig, TransactionType::P2PKH);
 
     // Convert the transaction to a hexadecimal string
     let hex_omni_tx = hex::encode(encoded_omni_tx);
@@ -174,81 +172,6 @@ fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_
     );
 }
 
-// impl BitcoinTransaction {
-//     pub fn build_for_signing(&self, input_index: usize, sighash_type: EcdsaSighashType) -> Vec<u8> {
-//         let mut buffer = Vec::new();
-
-//         // Version
-//         self.version.encode(&mut buffer).unwrap();
-
-//         let uses_segwit_serialization =
-//             self.input.iter().any(|input| !input.witness.is_empty()) || self.input.is_empty();
-
-//         // BIP-141 (segwit) transaction serialization should include marker and flag.
-//         if uses_segwit_serialization {
-//             buffer.push(SEGWIT_MARKER);
-//             buffer.push(SEGWIT_FLAG);
-//         }
-
-//         // Encode inputs based on sighash type
-//         match sighash_type {
-//             EcdsaSighashType::All | EcdsaSighashType::Single | EcdsaSighashType::None => {
-//                 for (i, input) in self.input.iter().enumerate() {
-//                     if i == input_index {
-//                         input.encode_with_script(&mut buffer, &input.script_sig).unwrap();
-//                     } else {
-//                         input.encode_with_script(&mut buffer, &OmniScriptBuf::default()).unwrap();
-//                     }
-//                 }
-//             }
-//             EcdsaSighashType::AnyoneCanPay => {
-//                 let input = &self.input[input_index];
-//                 input.encode_with_script(&mut buffer, &input.script_sig).unwrap();
-//             }
-//         }
-
-//         // Encode outputs based on sighash type
-//         match sighash_type {
-//             EcdsaSighashType::All | EcdsaSighashType::AnyoneCanPay => {
-//                 self.output.encode(&mut buffer).unwrap();
-//             }
-//             EcdsaSighashType::None => {
-//                 // No outputs are included
-//             }
-//             EcdsaSighashType::Single => {
-//                 if input_index < self.output.len() {
-//                     for (i, output) in self.output.iter().enumerate() {
-//                         if i == input_index {
-//                             output.encode(&mut buffer).unwrap();
-//                         } else {
-//                             TxOut::default().encode(&mut buffer).unwrap();
-//                         }
-//                     }
-//                 } else {
-//                     // If input_index is out of bounds, encode a single empty output
-//                     TxOut::default().encode(&mut buffer).unwrap();
-//                 }
-//             }
-//         }
-
-//         // BIP-141 (segwit) transaction serialization also contains witness data.
-//         if uses_segwit_serialization {
-//             for input in &self.input {
-//                 input.witness.encode(&mut buffer).unwrap();
-//             }
-//         }
-
-//         // Locktime
-//         self.lock_time.encode(&mut buffer).unwrap();
-
-//         // Append sighash type
-//         let sighash_type_bytes = sighash_type.to_u32().to_le_bytes();
-//         buffer.extend_from_slice(&sighash_type_bytes);
-
-//         buffer
-//     }
-// }
-
 // Tipos de Transacciones y SegWit
 // 1. P2PKH (Pay-to-PubKey-Hash): La transacción estándar donde el script_sig contiene la firma y la clave pública.
 // 2. P2SH (Pay-to-Script-Hash): La transacción donde el script_sig contiene el script de redención.
@@ -260,78 +183,6 @@ fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_
 // SIGHASH_NONE: Firma solo los inputs, excluyendo todos los outputs.
 // SIGHASH_SINGLE: Firma solo el input correspondiente y el output con el mismo índice.
 // SIGHASH_ANYONECANPAY: Permite que otros inputs sean añadidos a la transacción sin invalidar la firma.
-
-// PARA FIRMAR
-// use super::{
-//     bitcoin_transaction::BitcoinTransaction,
-//     types::{LockTime, TxIn, TxOut, Version},
-// };
-// use crate::transaction_builder::TxBuilder;
-// use bitcoin::util::sighash::EcdsaSighashType;
-// use bitcoin::secp256k1::{Secp256k1, Message};
-// use bitcoin::blockdata::script::Builder;
-// use bitcoin::blockdata::transaction::SigHashType;
-
-// pub struct BitcoinTransactionBuilder {
-//     version: Option<Version>,
-//     lock_time: Option<LockTime>,
-//     inputs: Option<Vec<TxIn>>,
-//     outputs: Option<Vec<TxOut>>,
-//     sighash_type: Option<EcdsaSighashType>,
-// }
-
-// impl Default for BitcoinTransactionBuilder {
-//     fn default() -> Self {
-//         Self::new()
-//     }
-// }
-
-// impl TxBuilder<BitcoinTransaction> for BitcoinTransactionBuilder {
-//     fn build(&self) -> BitcoinTransaction {
-//         BitcoinTransaction {
-//             version: self.version.expect("Missing version"),
-//             lock_time: self.lock_time.expect("Missing lock time"),
-//             input: self.inputs.clone().expect("Missing inputs"),
-//             output: self.outputs.clone().expect("Missing outputs"),
-//         }
-//     }
-// }
-
-// impl BitcoinTransactionBuilder {
-//     pub const fn new() -> Self {
-//         Self {
-//             version: None,
-//             lock_time: None,
-//             inputs: None,
-//             outputs: None,
-//             sighash_type: None,
-//         }
-//     }
-
-//     pub fn version(mut self, version: Version) -> Self {
-//         self.version = Some(version);
-//         self
-//     }
-
-//     pub fn lock_time(mut self, lock_time: LockTime) -> Self {
-//         self.lock_time = Some(lock_time);
-//         self
-//     }
-
-//     pub fn inputs(mut self, inputs: Vec<TxIn>) -> Self {
-//         self.inputs = Some(inputs);
-//         self
-//     }
-
-//     pub fn outputs(mut self, outputs: Vec<TxOut>) -> Self {
-//         self.outputs = Some(outputs);
-//         self
-//     }
-
-//     pub fn sighash_type(mut self, sighash_type: EcdsaSighashType) -> Self {
-//         self.sighash_type = Some(sighash_type);
-//         self
-//     }
 
 //     pub fn build_and_sign(&self, private_keys: &[bitcoin::PrivateKey], tx_type: &str) -> BitcoinTransaction {
 //         let mut tx = self.build();
