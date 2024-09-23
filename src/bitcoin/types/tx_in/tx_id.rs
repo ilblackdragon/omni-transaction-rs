@@ -1,3 +1,4 @@
+use core::fmt;
 use std::io::{BufRead, Write};
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
@@ -36,6 +37,12 @@ impl Encodable for Txid {
 impl Decodable for Txid {
     fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         Decodable::decode(r).map(Txid)
+    }
+}
+
+impl fmt::Display for Txid {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
     }
 }
 
