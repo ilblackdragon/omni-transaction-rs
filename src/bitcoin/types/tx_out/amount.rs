@@ -1,4 +1,7 @@
-use std::{io::BufRead, io::Write};
+use std::{
+    io::{BufRead, Write},
+    ops,
+};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
@@ -53,6 +56,20 @@ impl Amount {
             None => panic!("checked_mul overflowed"),
         }
     }
+
+    /// Checked addition.
+    ///
+    /// Returns [`None`] if overflow occurred.
+    pub fn checked_add(self, rhs: Amount) -> Option<Amount> {
+        self.0.checked_add(rhs.0).map(Amount)
+    }
+
+    /// Checked subtraction.
+    ///
+    /// Returns [`None`] if overflow occurred.
+    pub fn checked_sub(self, rhs: Amount) -> Option<Amount> {
+        self.0.checked_sub(rhs.0).map(Amount)
+    }
 }
 
 impl Encodable for Amount {
@@ -65,6 +82,22 @@ impl Decodable for Amount {
     fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         let value = Decodable::decode_from_finite_reader(r)?;
         Ok(Amount::from_sat(value))
+    }
+}
+
+impl ops::Add for Amount {
+    type Output = Amount;
+
+    fn add(self, rhs: Amount) -> Self::Output {
+        self.checked_add(rhs).expect("Amount addition error")
+    }
+}
+
+impl ops::Sub for Amount {
+    type Output = Amount;
+
+    fn sub(self, rhs: Amount) -> Self::Output {
+        self.checked_sub(rhs).expect("Amount subtraction error")
     }
 }
 

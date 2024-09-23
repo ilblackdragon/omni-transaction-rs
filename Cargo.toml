@@ -47,6 +47,10 @@ sha2 = "0.10.8"
 bitcoin = { version = "0.32.0", default-features = false, features = [
     "std",
     "serde",
+    "rand-std",
+    "rand",
+    "secp-lowmemory",
+    "secp-recovery",
 ] }
 bitcoind = { package = "bitcoind-json-rpc-regtest", version = "0.3.0", features = [
     "26_0",

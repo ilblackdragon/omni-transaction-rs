@@ -65,14 +65,18 @@ mod tests {
 
     #[test]
     fn test_build() {
+        let block_height = 10000;
         let builder = BitcoinTransactionBuilder::new()
-            .version(Version::ONE)
-            .lock_time(LockTime::from_height(10000).unwrap())
+            .version(Version::One)
+            .lock_time(LockTime::from_height(block_height).unwrap())
             .inputs(vec![])
             .outputs(vec![])
             .build();
 
-        assert_eq!(builder.version, Version::ONE);
-        assert_eq!(builder.lock_time, LockTime::from_height(10000).unwrap());
+        assert_eq!(builder.version, Version::One);
+        assert_eq!(
+            builder.lock_time,
+            LockTime::from_height(block_height).unwrap()
+        );
     }
 }

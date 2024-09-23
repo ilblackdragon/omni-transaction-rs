@@ -26,6 +26,10 @@ impl OutPoint {
     /// The number of bytes that an outpoint contributes to the size of a transaction.
     pub const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
 
+    pub const fn new(txid: Txid, vout: u32) -> OutPoint {
+        OutPoint { txid, vout }
+    }
+
     /// Creates a "null" `OutPoint`.
     ///
     /// This value is used for coinbase transactions because they don't have any previous outputs.
