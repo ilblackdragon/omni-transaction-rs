@@ -1,3 +1,4 @@
+/// Minimal required Bitcoin types, inspired by https://github.com/rust-bitcoin/rust-bitcoin
 pub mod lock_time;
 pub mod script_buf;
 pub mod tx_in;
