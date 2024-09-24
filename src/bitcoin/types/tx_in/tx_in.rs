@@ -40,9 +40,15 @@ pub struct TxIn {
 impl Encodable for TxIn {
     fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, io::Error> {
         let mut len = 0;
-        len += self.previous_output.encode(w)?;
-        len += self.script_sig.encode(w)?;
-        len += self.sequence.encode(w)?;
+        let previous_output_len = self.previous_output.encode(w)?;
+        len += previous_output_len;
+
+        let script_sig_len = self.script_sig.encode(w)?;
+        len += script_sig_len;
+
+        let sequence_len = self.sequence.encode(w)?;
+        len += sequence_len;
+
         Ok(len)
     }
 }
@@ -75,7 +81,8 @@ mod tests {
         };
         let mut buf = Vec::new();
 
-        assert_eq!(txin.encode(&mut buf).unwrap(), 32);
+        // The expected size is 36 (OutPoint = 32 txid + 4 vout) + 1 (ScriptBuf) + + 4 (Sequence) = 41
+        assert_eq!(txin.encode(&mut buf).unwrap(), 41);
         assert_eq!(TxIn::decode(&mut buf.as_slice()).unwrap(), txin);
     }
 }

@@ -162,6 +162,7 @@ mod tests {
     use bitcoin::absolute::LockTime as RustBitcoinLockTime;
     use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
+    use bitcoin::sighash::{EcdsaSighashType, SighashCache};
     use bitcoin::transaction::Sequence as RustBitcoinSequence;
     use bitcoin::transaction::{
         OutPoint, TxIn as RustBitcoinTxIn, TxOut as RustBitcoinTxOut, Txid,
@@ -176,7 +177,7 @@ mod tests {
     fn test_build_for_signing_for_bitcoin_against_rust_bitcoin_for_version_1() {
         let height = 1000000;
         let version = 1;
-        let tx = RustBitcoinTransaction {
+        let mut tx = RustBitcoinTransaction {
             version: RustBitcoinVersion(version),
             lock_time: RustBitcoinLockTime::from_height(height).unwrap(),
             input: vec![RustBitcoinTxIn {
@@ -194,11 +195,18 @@ mod tests {
             }],
         };
 
-        let mut buf = Vec::new();
-        let size = tx.consensus_encode(&mut buf).unwrap();
-
-        println!("size: {:?}", size);
-        println!("serialized: {:?}", buf);
+        let sighash_type: EcdsaSighashType = EcdsaSighashType::All;
+        let sighasher = SighashCache::new(&mut tx);
+        let mut buffer: Vec<u8> = Vec::new();
+        sighasher
+            .legacy_encode_signing_data_to(
+                &mut buffer,
+                0,
+                &ScriptBuf::default(),
+                sighash_type.to_u32(),
+            )
+            .is_sighash_single_bug()
+            .unwrap();
 
         // Omni implementation
         let omni_tx = OmniBitcoinTransaction {
@@ -220,31 +228,16 @@ mod tests {
         };
 
         let serialized = omni_tx.build_for_signing(OmniSighashType::All);
-        println!("serialized: {:?}", serialized);
 
-        assert_eq!(size, serialized.len());
-        assert_eq!(buf, serialized);
-        // let mut buf = [0u8; 1024];
-        // let size = omni_tx.build_for_signing(&mut &mut buf[..]).unwrap();
-        // let mut buf = [0u8; 1024];
-        // let raw_tx = hex!(SOME_TX);
-        // let tx: Transaction = Decodable::consensus_decode(&mut raw_tx.as_slice()).unwrap();
-
-        //
-        // assert_eq!(size, SOME_TX.len() / 2);
-        // assert_eq!(raw_tx, &buf[..size]);
-        // let serialized = tx.build_for_signing();
-        // println!("serialized: {:?}", serialized);
-
-        // let tx = Transaction::from_bytes(&serialized).unwrap();
-        // println!("tx: {:?}", tx);
+        assert_eq!(buffer.len(), serialized.len());
+        assert_eq!(buffer, serialized);
     }
 
     #[test]
     fn test_build_for_signing_for_bitcoin_against_rust_bitcoin_for_version_2() {
         let height = 1000000;
         let version = 2;
-        let tx = RustBitcoinTransaction {
+        let mut tx = RustBitcoinTransaction {
             version: RustBitcoinVersion(version),
             lock_time: RustBitcoinLockTime::from_height(height).unwrap(),
             input: vec![RustBitcoinTxIn {
@@ -262,11 +255,18 @@ mod tests {
             }],
         };
 
-        let mut buf = Vec::new();
-        let size = tx.consensus_encode(&mut buf).unwrap();
-
-        println!("size: {:?}", size);
-        println!("serialized BTC Orig: {:?}", buf);
+        let sighash_type: EcdsaSighashType = EcdsaSighashType::All;
+        let sighasher = SighashCache::new(&mut tx);
+        let mut buffer: Vec<u8> = Vec::new();
+        sighasher
+            .legacy_encode_signing_data_to(
+                &mut buffer,
+                0,
+                &ScriptBuf::default(),
+                sighash_type.to_u32(),
+            )
+            .is_sighash_single_bug()
+            .unwrap();
 
         // Omni implementation
         let omni_tx = OmniBitcoinTransaction {
@@ -290,7 +290,7 @@ mod tests {
         let serialized = omni_tx.build_for_signing(OmniSighashType::All);
         println!("serialized BTC Omni: {:?}", serialized);
 
-        assert_eq!(size, serialized.len());
-        assert_eq!(buf, serialized);
+        assert_eq!(buffer.len(), serialized.len());
+        assert_eq!(buffer, serialized);
     }
 }
