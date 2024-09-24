@@ -120,7 +120,7 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
     // Create the script_sig
     let script_sig_new = Builder::new()
-        .push_slice(&signature.serialize())
+        .push_slice(signature.serialize())
         .push_key(&bob.bitcoin_public_key)
         .into_script();
 
@@ -158,7 +158,7 @@ fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_
                 json!(max_conf),
                 json!(vec![address.to_string()]),
                 json!(include_unsafe),
-                query_options.clone(),
+                query_options,
             ],
         )
         .unwrap();
@@ -167,7 +167,7 @@ fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_
         unspent_utxos.len() == number_of_utxos,
         "Expected {} UTXOs for address {}, but found {}",
         number_of_utxos,
-        address.to_string(),
+        address,
         unspent_utxos.len()
     );
 }

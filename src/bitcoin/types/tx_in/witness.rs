@@ -104,15 +104,13 @@ impl Decodable for Witness {
                 let element_size = element_size_varint.0 as usize;
                 let required_len = cursor
                     .checked_add(element_size)
-                    .ok_or(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "OversizedVectorAllocation",
-                    ))?
+                    .ok_or_else(|| {
+                        std::io::Error::new(std::io::ErrorKind::Other, "OversizedVectorAllocation")
+                    })?
                     .checked_add(element_size_varint_len)
-                    .ok_or(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        "OversizedVectorAllocation",
-                    ))?;
+                    .ok_or_else(|| {
+                        std::io::Error::new(std::io::ErrorKind::Other, "OversizedVectorAllocation")
+                    })?;
                 if required_len > MAX_VEC_SIZE + witness_index_space {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::Other,
