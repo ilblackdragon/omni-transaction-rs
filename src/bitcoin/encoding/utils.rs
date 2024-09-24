@@ -87,7 +87,7 @@ impl Decodable for VarInt {
                         "NonMinimalVarInt",
                     ))
                 } else {
-                    Ok(VarInt::from(x))
+                    Ok(Self::from(x))
                 }
             }
             0xFE => {
@@ -98,7 +98,7 @@ impl Decodable for VarInt {
                         "NonMinimalVarInt",
                     ))
                 } else {
-                    Ok(VarInt::from(x))
+                    Ok(Self::from(x))
                 }
             }
             0xFD => {
@@ -109,10 +109,10 @@ impl Decodable for VarInt {
                         "NonMinimalVarInt",
                     ))
                 } else {
-                    Ok(VarInt::from(x))
+                    Ok(Self::from(x))
                 }
             }
-            n => Ok(VarInt::from(n)),
+            n => Ok(Self::from(n)),
         }
     }
 }

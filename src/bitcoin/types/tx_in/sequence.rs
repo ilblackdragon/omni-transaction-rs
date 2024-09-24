@@ -28,7 +28,7 @@ impl Sequence {
 impl Default for Sequence {
     /// The default value of sequence is 0xffffffff.
     fn default() -> Self {
-        Sequence::MAX
+        Self::MAX
     }
 }
 

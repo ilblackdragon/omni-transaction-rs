@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 pub mod hash;
 pub mod outpoint;
 pub mod sequence;

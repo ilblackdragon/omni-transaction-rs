@@ -9,13 +9,13 @@ impl Height {
     pub const ZERO: u32 = 0;
 
     /// The minimum absolute block height (0), the genesis block.
-    pub const MIN: u32 = Height::ZERO;
+    pub const MIN: u32 = Self::ZERO;
 
     /// The maximum absolute block height.
     pub const MAX: u32 = LOCK_TIME_THRESHOLD - 1;
 
     /// Returns true if `n` is a valid block height i.e., less than 500,000,000.
-    pub fn is_valid(n: u32) -> bool {
+    pub const fn is_valid(n: u32) -> bool {
         n < LOCK_TIME_THRESHOLD
     }
 }

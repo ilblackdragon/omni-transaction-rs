@@ -50,7 +50,7 @@ impl Default for Witness {
 
 impl Witness {
     pub const fn new() -> Self {
-        Witness {
+        Self {
             content: Vec::new(),
             witness_elements: 0,
             indices_start: 0,
@@ -134,7 +134,7 @@ impl Decodable for Witness {
             content.truncate(cursor);
             // Index space is now at the end of the Vec
             content.rotate_left(witness_index_space);
-            Ok(Witness {
+            Ok(Self {
                 content,
                 witness_elements,
                 indices_start: cursor - witness_index_space,

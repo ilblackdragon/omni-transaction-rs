@@ -26,15 +26,15 @@ impl OutPoint {
     /// The number of bytes that an outpoint contributes to the size of a transaction.
     pub const SIZE: usize = 32 + 4; // The serialized lengths of txid and vout.
 
-    pub const fn new(txid: Txid, vout: u32) -> OutPoint {
+    pub const fn new(txid: Txid, vout: u32) -> Self {
         Self { txid, vout }
     }
 
     /// Creates a "null" `OutPoint`.
     ///
     /// This value is used for coinbase transactions because they don't have any previous outputs.
-    pub fn null() -> Self {
-        OutPoint {
+    pub const fn null() -> Self {
+        Self {
             txid: Txid::all_zeros(),
             vout: u32::MAX,
         }
@@ -42,7 +42,7 @@ impl OutPoint {
 
     /// Checks if an `OutPoint` is "null".
     pub fn is_null(&self) -> bool {
-        *self == OutPoint::null()
+        *self == Self::null()
     }
 }
 
@@ -65,7 +65,7 @@ impl Decodable for OutPoint {
     fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
         let txid = Txid::decode(r)?;
         let vout = Decodable::decode(r)?;
-        Ok(OutPoint { txid, vout })
+        Ok(Self { txid, vout })
     }
 }
 

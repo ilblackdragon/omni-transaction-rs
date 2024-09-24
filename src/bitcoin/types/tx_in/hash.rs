@@ -12,7 +12,7 @@ use crate::bitcoin::encoding::{encode::Encodable, extensions::WriteExt, Decodabl
 pub struct Hash([u8; 32]);
 
 impl Hash {
-    pub fn as_byte_array(&self) -> [u8; 32] {
+    pub const fn as_byte_array(&self) -> [u8; 32] {
         self.0
     }
 

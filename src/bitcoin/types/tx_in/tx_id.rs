@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 pub struct Txid(pub Hash);
 
 impl Txid {
-    pub fn as_byte_array(&self) -> [u8; 32] {
+    pub const fn as_byte_array(&self) -> [u8; 32] {
         self.0.as_byte_array()
     }
 }
@@ -23,8 +23,8 @@ impl Txid {
     ///
     /// This is used as the "txid" of the dummy input of a coinbase transaction. It is
     /// not a real TXID and should not be used in other contexts.
-    pub fn all_zeros() -> Self {
-        Txid(Hash::all_zeros())
+    pub const fn all_zeros() -> Self {
+        Self(Hash::all_zeros())
     }
 }
 

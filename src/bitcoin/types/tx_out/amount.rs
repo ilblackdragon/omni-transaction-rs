@@ -19,15 +19,15 @@ pub struct Amount(u64);
 
 impl Amount {
     /// The zero amount.
-    pub const ZERO: Amount = Amount(0);
+    pub const ZERO: Self = Self(0);
     /// Exactly one satoshi.
-    pub const ONE_SAT: Amount = Amount(1);
+    pub const ONE_SAT: Self = Self(1);
     /// Exactly one bitcoin.
-    pub const ONE_BTC: Amount = Self::from_int_btc(1);
+    pub const ONE_BTC: Self = Self::from_int_btc(1);
     /// The maximum value allowed as an amount. Useful for sanity checking.
-    pub const MAX_MONEY: Amount = Self::from_int_btc(21_000_000);
+    pub const MAX_MONEY: Self = Self::from_int_btc(21_000_000);
     /// The minimum value of an amount.
-    pub const MIN: Amount = Self::ZERO;
+    pub const MIN: Self = Self::ZERO;
     /// The maximum value of an amount.
     pub const MAX: Self = Self(u64::MAX);
     /// The number of bytes that an amount contributes to the size of a transaction.
@@ -35,7 +35,7 @@ impl Amount {
 
     /// Creates an [`Amount`] with satoshi precision and the given number of satoshis.
     pub const fn from_sat(satoshi: u64) -> Self {
-        Amount(satoshi)
+        Self(satoshi)
     }
 
     /// Gets the number of satoshis in this [`Amount`].

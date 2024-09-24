@@ -41,11 +41,11 @@ impl LockTime {
         }
     }
 
-    pub fn is_block_height(&self) -> bool {
+    pub const fn is_block_height(&self) -> bool {
         Height::is_valid(self.0)
     }
 
-    pub fn is_unix_time(&self) -> bool {
+    pub const fn is_unix_time(&self) -> bool {
         Time::is_valid(self.0)
     }
 

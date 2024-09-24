@@ -24,7 +24,7 @@ pub enum Version {
 impl Version {
     /// Returns the hexadecimal representation of the version.
     pub fn to_hex(&self) -> String {
-        hex::encode(&(*self as i32).to_le_bytes())
+        hex::encode((*self as i32).to_le_bytes())
     }
 
     /// Serializes the version and returns the result as a Vec<u8>.

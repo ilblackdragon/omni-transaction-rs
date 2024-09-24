@@ -108,8 +108,8 @@ impl Decodable for Vec<TxIn> {
         // reallocate.
         // Note: OOM protection relies on reader eventually running out of
         // data to feed us.
-        let max_capacity = MAX_VEC_SIZE / 4 / std::mem::size_of::<Vec<TxIn>>();
-        let mut ret = Vec::with_capacity(core::cmp::min(len as usize, max_capacity));
+        let max_capacity = MAX_VEC_SIZE / 4 / std::mem::size_of::<Self>();
+        let mut ret = Self::with_capacity(core::cmp::min(len as usize, max_capacity));
         for _ in 0..len {
             ret.push(Decodable::decode_from_finite_reader(r)?);
         }
@@ -140,7 +140,7 @@ impl Decodable for Vec<TxOut> {
         // Note: OOM protection relies on reader eventually running out of
         // data to feed us.
         let max_capacity = MAX_VEC_SIZE / 4 / std::mem::size_of::<Vec<TxIn>>();
-        let mut ret = Vec::with_capacity(core::cmp::min(len as usize, max_capacity));
+        let mut ret = Self::with_capacity(core::cmp::min(len as usize, max_capacity));
         for _ in 0..len {
             ret.push(Decodable::decode_from_finite_reader(r)?);
         }

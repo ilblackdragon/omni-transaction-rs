@@ -1,3 +1,5 @@
+#![allow(clippy::module_inception)]
+
 pub mod amount;
 mod tx_out;
 
