@@ -91,9 +91,9 @@ jobs:
         run: |
           sudo add-apt-repository ppa:bitcoin/bitcoin
           sudo apt-get update
-          sudo apt-get install -y bitcoind
+          sudo apt-get install -y bitcoin
       - name: Install bitcoind on macOS
         if: matrix.platform == 'macos-latest'
-        run: brew install bitcoind
+        run: brew install bitcoin
       - name: Run integration tests
         run: just test-integration
