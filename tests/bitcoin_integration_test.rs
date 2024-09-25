@@ -20,6 +20,8 @@ use omni_transaction::types::BITCOIN;
 // Testing
 use eyre::Result;
 use serde_json::json;
+use std::fs;
+use std::path::PathBuf;
 use std::result::Result::Ok;
 
 mod utils;
@@ -28,10 +30,20 @@ pub use utils::bitcoin_utils::*;
 
 const OMNI_SPEND_AMOUNT: OmniAmount = OmniAmount::from_sat(500_000_000);
 
+fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
+    let tmpdir = PathBuf::from("bitcoin-testnet");
+    if !tmpdir.exists() {
+        fs::create_dir_all(&tmpdir).unwrap();
+    }
+
+    let mut conf = bitcoind::Conf::default();
+    conf.tmpdir = Some(tmpdir);
+    Ok(bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap())
+}
+
 #[tokio::test]
 async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
-    let exe_path = bitcoind::exe_path().unwrap();
-    let bitcoind = bitcoind::BitcoinD::new(exe_path).unwrap();
+    let bitcoind = setup_bitcoin_testnet().unwrap();
     let client = &bitcoind.client;
     let blockchain_info = client.get_blockchain_info().unwrap();
     assert_eq!(0, blockchain_info.blocks);
@@ -153,8 +165,8 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
 #[tokio::test]
 async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
-    let bitcoind = bitcoind::BitcoinD::from_downloaded().unwrap();
-    let client: &bitcoind::Client = &bitcoind.client;
+    let bitcoind = setup_bitcoin_testnet().unwrap();
+    let client = &bitcoind.client;
 
     // Setup testing environment
     let mut btc_test_context = BTCTestContext::new(client).unwrap();

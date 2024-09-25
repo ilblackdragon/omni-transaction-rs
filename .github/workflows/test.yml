@@ -86,14 +86,5 @@ jobs:
       - uses: ./.github/actions/install-just
       - uses: ./.github/actions/setup-rust
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: Add Bitcoin PPA and install bitcoind on Ubuntu
-        if: matrix.platform == 'ubuntu-latest'
-        run: |
-          sudo add-apt-repository ppa:bitcoin/bitcoin
-          sudo apt-get update
-          sudo apt-get install -y bitcoin
-      - name: Install bitcoind on macOS
-        if: matrix.platform == 'macos-latest'
-        run: brew install bitcoin
       - name: Run integration tests
         run: just test-integration
