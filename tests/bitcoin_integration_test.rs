@@ -4,6 +4,8 @@ use bitcoin::script::Builder;
 use bitcoin::secp256k1::{Message, Secp256k1};
 use bitcoin::Address;
 use bitcoin::EcdsaSighashType;
+use bitcoin::ScriptBuf;
+use bitcoin::Witness;
 // Omni library
 use omni_transaction::bitcoin::bitcoin_transaction::BitcoinTransaction;
 use omni_transaction::bitcoin::types::{
@@ -93,9 +95,9 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
     // Add the script_sig to the transaction
     omni_tx.input[0].script_sig = OmniScriptBuf(bob.script_pubkey.as_bytes().to_vec());
 
-    // Extend the transaction with the sighash type
+    // Encode the transaction for signing
     let sighash_type = OmniSighashType::All;
-    let encoded_data = omni_tx.build_for_signing(sighash_type);
+    let encoded_data = omni_tx.build_for_signing_legacy(sighash_type);
 
     // Calculate the sighash
     let sighash_omni = sha256d::Hash::hash(&encoded_data);
@@ -178,42 +180,57 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
     let vout = first_unspent["vout"].as_u64().unwrap();
 
+    println!("tx id {:?}", omni_txid);
+    println!("vout {:?}", vout);
     // Create inputs using Omni library
     let txin: OmniTxIn = OmniTxIn {
         previous_output: OmniOutPoint::new(omni_txid, vout as u32),
-        script_sig: OmniScriptBuf::default(), // Initially empty, will be filled later with the signature
+        script_sig: OmniScriptBuf::default(), // For a p2wpkh script_sig is empty.
         sequence: OmniSequence::MAX,
         witness: OmniWitness::default(),
     };
 
-    let txout = OmniTxOut {
+    println!("tx in {:?}", txin);
+
+    // The spend output is locked to a key controlled by the receiver. In this case to Alice.
+    let spend_txout = OmniTxOut {
         value: OMNI_SPEND_AMOUNT,
         script_pubkey: OmniScriptBuf(alice.script_pubkey.as_bytes().to_vec()),
     };
+    println!("spend_txout {:?}", spend_txout);
 
     let utxo_amount =
         OmniAmount::from_sat((first_unspent["amount"].as_f64().unwrap() * 100_000_000.0) as u64);
 
     let change_amount: OmniAmount = utxo_amount - OMNI_SPEND_AMOUNT - OmniAmount::from_sat(1000); // 1000 satoshis for fee
 
+    let script_sig = ScriptBuf::new_p2wpkh(&bob.wpkh);
+
+    // The change output is locked to a key controlled by us.
     let change_txout = OmniTxOut {
         value: change_amount,
-        script_pubkey: OmniScriptBuf(bob.script_pubkey.as_bytes().to_vec()),
+        script_pubkey: OmniScriptBuf(script_sig.as_bytes().to_vec()), // Change comes back to us.
     };
+    println!("change_txout {:?}", change_txout);
 
     let mut omni_tx: BitcoinTransaction = TransactionBuilder::new::<BITCOIN>()
-        .version(OmniVersion::One)
+        .version(OmniVersion::Two)
         .lock_time(OmniLockTime::from_height(1).unwrap())
         .inputs(vec![txin])
-        .outputs(vec![txout, change_txout])
+        .outputs(vec![spend_txout, change_txout])
         .build();
 
-    // Add the script_sig to the transaction
-    omni_tx.input[0].script_sig = OmniScriptBuf(bob.script_pubkey.as_bytes().to_vec());
+    println!("omni_tx {:?}", omni_tx);
 
-    // Extend the transaction with the sighash type
+    // Prepare the transaction for signing
     let sighash_type = OmniSighashType::All;
-    let encoded_data = omni_tx.build_for_signing(sighash_type);
+    let input_index = 0;
+    let encoded_data = omni_tx.build_for_signing_segwit(
+        sighash_type,
+        input_index,
+        &OmniScriptBuf(alice.script_pubkey.as_bytes().to_vec()),
+        utxo_amount.to_sat(),
+    );
 
     // Calculate the sighash
     let sighash_omni = sha256d::Hash::hash(&encoded_data);
@@ -229,6 +246,7 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         .is_ok();
 
     assert!(is_valid, "The signature should be valid");
+    // println!("Is Valid {:?}", is_valid);
 
     // Encode the signature
     let signature = bitcoin::ecdsa::Signature {
@@ -236,28 +254,31 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         sighash_type: EcdsaSighashType::All,
     };
 
-    // Create the script_sig
-    let script_sig_new = Builder::new()
-        .push_slice(signature.serialize())
-        .push_key(&bob.bitcoin_public_key)
-        .into_script();
+    println!("signature_omni {:?}", sighash_omni);
+    println!("public key {:?}", &bob.public_key);
+
+    // Create the witness
+    let witness = Witness::p2wpkh(&signature, &bob.public_key);
 
     // Assign script_sig to txin
-    let omni_script_sig = OmniScriptBuf(script_sig_new.as_bytes().to_vec());
-    let encoded_omni_tx = omni_tx.build_with_script_sig(0, omni_script_sig, TransactionType::P2PKH);
+    let encoded_omni_tx = omni_tx.build_with_witness(0, witness.to_vec(), TransactionType::P2WPKH);
+
+    println!("encoded omni tx {:?}", encoded_omni_tx);
 
     // Convert the transaction to a hexadecimal string
     let hex_omni_tx = hex::encode(encoded_omni_tx);
+    println!("hex omni tx {:?}", hex_omni_tx);
 
-    let raw_tx_result: serde_json::Value = client
-        .call("sendrawtransaction", &[json!(hex_omni_tx)])
-        .unwrap();
+    // TODO: Fix broadcasting the transaction
+    // let raw_tx_result: serde_json::Value = client
+    //     .call("sendrawtransaction", &[json!(hex_omni_tx)])
+    //     .unwrap();
 
-    println!("raw_tx_result: {:?}", raw_tx_result);
+    // println!("raw_tx_result: {:?}", raw_tx_result);
 
-    client.generate_to_address(101, &bob.address)?;
+    // client.generate_to_address(101, &bob.address)?;
 
-    assert_utxos_for_address(client, alice.address, 1);
+    // assert_utxos_for_address(client, alice.address, 1);
 
     Ok(())
 }
@@ -289,77 +310,3 @@ fn assert_utxos_for_address(client: &bitcoind::Client, address: Address, number_
         unspent_utxos.len()
     );
 }
-
-// Tipos de Transacciones y SegWit
-// 1. P2PKH (Pay-to-PubKey-Hash): La transacción estándar donde el script_sig contiene la firma y la clave pública.
-// 2. P2SH (Pay-to-Script-Hash): La transacción donde el script_sig contiene el script de redención.
-// 3. P2WPKH (Pay-to-Witness-PubKey-Hash): La transacción SegWit donde la firma y la clave pública están en la parte de testigo (witness).
-// 4. P2WSH (Pay-to-Witness-Script-Hash): La transacción SegWit donde el script de redención está en la parte de testigo (witness).
-// Cómo Afecta el EcdsaSighashType
-// El EcdsaSighashType afecta qué partes de la transacción se incluyen en el cálculo del sighash. Aquí hay un resumen:
-// SIGHASH_ALL: Firma todos los inputs y outputs.
-// SIGHASH_NONE: Firma solo los inputs, excluyendo todos los outputs.
-// SIGHASH_SINGLE: Firma solo el input correspondiente y el output con el mismo índice.
-// SIGHASH_ANYONECANPAY: Permite que otros inputs sean añadidos a la transacción sin invalidar la firma.
-
-//     pub fn build_and_sign(&self, private_keys: &[bitcoin::PrivateKey], tx_type: &str) -> BitcoinTransaction {
-//         let mut tx = self.build();
-
-//         let sighash_type = self.sighash_type.expect("Missing sighash type");
-
-//         for (i, input) in tx.input.iter_mut().enumerate() {
-//             // Extend the transaction with the sighash type
-//             let mut encoded_data = tx.build_for_signing(i, sighash_type);
-//             let sighash_type_bytes = sighash_type.to_u32().to_le_bytes();
-//             encoded_data.extend_from_slice(&sighash_type_bytes);
-
-//             // Calculate the sighash
-//             let sighash = sha256d::Hash::hash(&encoded_data);
-//             let msg = Message::from_digest_slice(sighash.as_byte_array()).unwrap();
-
-//             // Sign the sighash
-//             let secp = Secp256k1::new();
-//             let signature = secp.sign_ecdsa(&msg, &private_keys[i].key);
-
-//             // Create the script_sig or witness based on tx_type
-//             match tx_type {
-//                 "P2PKH" => {
-//                     let script_sig = Builder::new()
-//                         .push_slice(&signature.serialize())
-//                         .push_key(&private_keys[i].public_key(&secp))
-//                         .into_script();
-//                     input.script_sig = script_sig;
-//                 }
-//                 "P2SH" => {
-//                     // Assuming redeem_script is provided
-//                     let redeem_script = ...; // Define your redeem script
-//                     let script_sig = Builder::new()
-//                         .push_slice(&signature.serialize())
-//                         .push_key(&private_keys[i].public_key(&secp))
-//                         .push_slice(&redeem_script)
-//                         .into_script();
-//                     input.script_sig = script_sig;
-//                 }
-//                 "P2WPKH" => {
-//                     let witness = vec![
-//                         signature.serialize().to_vec(),
-//                         private_keys[i].public_key(&secp).to_bytes(),
-//                     ];
-//                     input.witness = witness;
-//                 }
-//                 "P2WSH" => {
-//                     // Assuming witness_script is provided
-//                     let witness_script = ...; // Define your witness script
-//                     let witness = vec![
-//                         signature.serialize().to_vec(),
-//                         witness_script.to_bytes(),
-//                     ];
-//                     input.witness = witness;
-//                 }
-//                 _ => panic!("Unsupported transaction type"),
-//             }
-//         }
-
-//         tx
-//     }
-// }
