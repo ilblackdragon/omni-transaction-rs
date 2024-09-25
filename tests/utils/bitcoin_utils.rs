@@ -1,7 +1,7 @@
 use bitcoin::bip32::{ChildNumber, DerivationPath, Xpub};
 use bitcoin::secp256k1::{PublicKey, Secp256k1, SecretKey};
-use bitcoin::PublicKey as BitcoinPublicKey;
 use bitcoin::{bip32::Xpriv, Address, Network, ScriptBuf};
+use bitcoin::{PublicKey as BitcoinPublicKey, WPubkeyHash};
 use bitcoind::AddressType;
 use serde_json::{json, Value};
 use std::str::FromStr as _;
@@ -12,6 +12,7 @@ pub struct UserInfo {
     pub private_key: SecretKey,
     pub public_key: PublicKey,
     pub bitcoin_public_key: BitcoinPublicKey,
+    pub wpkh: WPubkeyHash,
 }
 
 pub struct BTCTestContext<'a> {
@@ -79,6 +80,10 @@ impl<'a> BTCTestContext<'a> {
             .unwrap()
             .private_key;
 
+        let wpkh: WPubkeyHash = bitcoin_public_key
+            .wpubkey_hash()
+            .expect("key is compressed");
+
         self.account_index += 1;
 
         Ok(UserInfo {
@@ -87,6 +92,7 @@ impl<'a> BTCTestContext<'a> {
             private_key,
             public_key,
             bitcoin_public_key,
+            wpkh,
         })
     }
 
