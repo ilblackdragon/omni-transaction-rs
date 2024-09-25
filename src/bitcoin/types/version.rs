@@ -27,7 +27,7 @@ impl Version {
         hex::encode((*self as i32).to_le_bytes())
     }
 
-    /// Serializes the version and returns the result as a Vec<u8>.
+    /// Serializes the version and returns the result as a `Vec<u8>`.
     pub fn to_vec(&self) -> Vec<u8> {
         (*self as i32).to_le_bytes().to_vec()
     }
