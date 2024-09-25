@@ -6,6 +6,10 @@ lint:
 fmt:
     cargo fmt --check
 
+# Check docs
+doc:
+    RUSTDOCFLAGS="-D warnings" cargo doc
+    
 # Verify all compiles
 check:
     cargo check
