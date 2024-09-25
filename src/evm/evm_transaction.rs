@@ -4,8 +4,9 @@ use rlp::RlpStream;
 use crate::constants::EIP_1559_TYPE;
 
 use super::types::{AccessList, Address, Signature};
+use super::utils::parse_eth_address;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 #[serde(crate = "near_sdk::serde")]
 pub struct EVMTransaction {
     pub chain_id: u64,
@@ -83,6 +84,76 @@ impl EVMTransaction {
             }
             rlp_stream.finalize_unbounded_list();
         }
+    }
+
+    pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
+        let v: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(json)?;
+
+        let to = v["to"].as_str().unwrap_or_default().to_string();
+
+        let to_parsed = parse_eth_address(
+            to.strip_prefix("0x")
+                .unwrap_or("0000000000000000000000000000000000000000"),
+        );
+
+        let nonce_str = v["nonce"].as_str().expect("nonce should be provided");
+        let nonce = parse_u64(nonce_str).expect("nonce should be a valid u64");
+
+        let value_str = v["value"].as_str().expect("value should be provided");
+        let value = parse_u128(value_str).expect("value should be a valid u128");
+
+        let gas_limit_str = v["gasLimit"].as_str().expect("gasLimit should be provided");
+        let gas_limit = parse_u128(gas_limit_str).expect("gasLimit should be a valid u128");
+
+        let max_priority_fee_per_gas_str = v["maxPriorityFeePerGas"]
+            .as_str()
+            .expect("maxPriorityFeePerGas should be provided");
+        let max_priority_fee_per_gas = parse_u128(max_priority_fee_per_gas_str)
+            .expect("maxPriorityFeePerGas should be a valid u128");
+
+        let max_fee_per_gas_str = v["maxFeePerGas"]
+            .as_str()
+            .expect("maxFeePerGas should be provided");
+        let max_fee_per_gas =
+            parse_u128(max_fee_per_gas_str).expect("maxFeePerGas should be a valid u128");
+
+        let chain_id_str = v["chainId"].as_str().expect("chainId should be provided");
+        let chain_id = parse_u64(chain_id_str).expect("chainId should be a valid u64");
+
+        let input = v["input"].as_str().unwrap_or_default().to_string();
+        let input =
+            hex::decode(&input.strip_prefix("0x").unwrap_or("")).expect("input should be hex");
+
+        // TODO: Implement access list
+        // let access_list = v["accessList"].as_str().unwrap_or_default().to_string();
+
+        Ok(EVMTransaction {
+            chain_id,
+            nonce,
+            to: Some(to_parsed),
+            value,
+            input,
+            gas_limit,
+            max_fee_per_gas,
+            max_priority_fee_per_gas,
+            access_list: vec![],
+        })
+    }
+}
+
+fn parse_u64(value: &str) -> Result<u64, std::num::ParseIntError> {
+    if let Some(hex_str) = value.strip_prefix("0x") {
+        u64::from_str_radix(hex_str, 16)
+    } else {
+        value.parse::<u64>()
+    }
+}
+
+fn parse_u128(value: &str) -> Result<u128, std::num::ParseIntError> {
+    if let Some(hex_str) = value.strip_prefix("0x") {
+        u128::from_str_radix(hex_str, 16)
+    } else {
+        value.parse::<u128>()
     }
 }
 
@@ -272,5 +343,71 @@ mod tests {
             omni_encoded_with_signature.len()
         );
         assert_eq!(tx_encoded_with_signature, omni_encoded_with_signature);
+    }
+
+    #[test]
+    fn test_build_for_signing_for_evm_against_allow_using_json_input() {
+        let tx1 = r#"
+        {
+            "to": "0x525521d79134822a342d330bd91DA67976569aF1",
+            "nonce": "1",
+            "value": "0x038d7ea4c68000",
+            "maxPriorityFeePerGas": "0x1",
+            "maxFeePerGas": "0x1",
+            "gasLimit":"21000",
+            "chainId":"11155111"
+        }"#;
+
+        let evm_tx1 = EVMTransaction::from_json(tx1).unwrap();
+
+        println!("evm_tx1: {:?}", evm_tx1);
+
+        assert_eq!(evm_tx1.chain_id, 11155111);
+        assert_eq!(evm_tx1.nonce, 1);
+        assert_eq!(
+            evm_tx1.to,
+            Some(
+                address!("525521d79134822a342d330bd91DA67976569aF1")
+                    .0
+                    .into()
+            )
+        );
+        assert_eq!(evm_tx1.value, 0x038d7ea4c68000);
+        assert_eq!(evm_tx1.max_fee_per_gas, 0x1);
+        assert_eq!(evm_tx1.max_priority_fee_per_gas, 0x1);
+        assert_eq!(evm_tx1.gas_limit, 21000);
+
+        let tx2 = r#"
+        {
+            "to": "0x525521d79134822a342d330bd91DA67976569aF1",
+            "nonce": "1",
+            "input": "0x6a627842000000000000000000000000525521d79134822a342d330bd91DA67976569aF1",
+            "value": "0",
+            "maxPriorityFeePerGas": "0x1",
+            "maxFeePerGas": "0x1",
+            "gasLimit":"21000",
+            "chainId":"11155111"
+        }"#;
+
+        let evm_tx2 = EVMTransaction::from_json(tx2).unwrap();
+
+        println!("evm_tx2: {:?}", evm_tx2);
+
+        assert_eq!(evm_tx2.chain_id, 11155111);
+        assert_eq!(evm_tx2.nonce, 1);
+        assert_eq!(
+            evm_tx2.to,
+            Some(
+                address!("525521d79134822a342d330bd91DA67976569aF1")
+                    .0
+                    .into()
+            )
+        );
+        assert_eq!(evm_tx2.value, 0);
+        assert_eq!(
+            evm_tx2.input,
+            hex!("6a627842000000000000000000000000525521d79134822a342d330bd91DA67976569aF1")
+                .to_vec()
+        );
     }
 }
