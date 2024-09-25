@@ -360,8 +360,6 @@ mod tests {
 
         let evm_tx1 = EVMTransaction::from_json(tx1).unwrap();
 
-        println!("evm_tx1: {:?}", evm_tx1);
-
         assert_eq!(evm_tx1.chain_id, 11155111);
         assert_eq!(evm_tx1.nonce, 1);
         assert_eq!(
@@ -390,8 +388,6 @@ mod tests {
         }"#;
 
         let evm_tx2 = EVMTransaction::from_json(tx2).unwrap();
-
-        println!("evm_tx2: {:?}", evm_tx2);
 
         assert_eq!(evm_tx2.chain_id, 11155111);
         assert_eq!(evm_tx2.nonce, 1);
