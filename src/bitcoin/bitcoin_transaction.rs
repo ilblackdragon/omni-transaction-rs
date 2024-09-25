@@ -32,7 +32,7 @@ pub struct BitcoinTransaction {
 // Function to compute sha256d (double SHA-256)
 fn sha256d(data: &[u8]) -> Vec<u8> {
     let hash1 = Sha256::digest(data);
-    let hash2 = Sha256::digest(&hash1);
+    let hash2 = Sha256::digest(hash1);
     hash2.to_vec()
 }
 
@@ -66,7 +66,7 @@ impl BitcoinTransaction {
     ) -> Vec<u8> {
         match tx_type {
             TransactionType::P2PKH | TransactionType::P2SH => {
-                self.input[input_index].script_sig = script_sig.clone();
+                self.input[input_index].script_sig = script_sig;
             }
             TransactionType::P2WPKH | TransactionType::P2WSH => {
                 panic!("Use build_with_witness for SegWit transactions");
@@ -460,7 +460,6 @@ mod tests {
                 Amount::from_sat(0),
                 sighash_type,
             )
-            .map_err(|e| e)
             .unwrap(); // Handle the Result
 
         println!("serialized buffer {:?}", buffer);
@@ -486,7 +485,7 @@ mod tests {
         let serialized = omni_tx.build_for_signing_segwit(
             OmniSighashType::All,
             0,
-            &&OmniScriptBuf::default(),
+            &OmniScriptBuf::default(),
             OmniAmount::from_sat(0).to_sat(),
         );
         println!("serialized BTC Omni: {:?}", serialized);

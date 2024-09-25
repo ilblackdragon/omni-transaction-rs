@@ -58,7 +58,7 @@ impl Witness {
     }
 
     /// Returns the number of elements this witness holds.
-    pub fn len(&self) -> usize {
+    pub const fn len(&self) -> usize {
         self.witness_elements
     }
 
@@ -108,7 +108,7 @@ impl Witness {
             cursor += elem.as_ref().len();
         }
 
-        Witness {
+        Self {
             witness_elements,
             content,
             indices_start: content_size,
