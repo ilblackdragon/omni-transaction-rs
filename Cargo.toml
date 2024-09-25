@@ -25,7 +25,7 @@ near-sdk = { version = "5.3.0" }
 serde-big-array = "0.5.1"
 bs58 = "0.5.1"
 serde = "1.0"
-
+sha2 = "0.10.8"
 
 [dev-dependencies]
 # ethereum
@@ -41,7 +41,6 @@ near-workspaces = { version = "0.13.0", features = [
     "unstable",
 ] }
 near-jsonrpc-client = { git = "https://github.com/EdsonAlcala/near-jsonrpc-client-rs", tag = "v0.12.1" }
-sha2 = "0.10.8"
 
 # bitcoin
 bitcoin = { version = "0.32.0", default-features = false, features = [

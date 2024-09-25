@@ -57,9 +57,62 @@ impl Witness {
         }
     }
 
+    /// Returns the number of elements this witness holds.
+    pub fn len(&self) -> usize {
+        self.witness_elements
+    }
+
+    /// Returns a struct implementing [`Iterator`].
+    pub fn iter(&self) -> Iter {
+        Iter {
+            inner: self.content.as_slice(),
+            indices_start: self.indices_start,
+            current_index: 0,
+        }
+    }
+
     /// Returns `true` if the witness contains no element.
     pub const fn is_empty(&self) -> bool {
         self.witness_elements == 0
+    }
+
+    /// Convenience method to create an array of byte-arrays from this witness.
+    pub fn to_bytes(&self) -> Vec<Vec<u8>> {
+        self.iter().map(|s| s.to_vec()).collect()
+    }
+
+    /// Convenience method to create an array of byte-arrays from this witness.
+    pub fn to_vec(&self) -> Vec<Vec<u8>> {
+        self.to_bytes()
+    }
+
+    /// Creates a [`Witness`] object from a slice of bytes slices where each slice is a witness item.
+    pub fn from_slice<T: AsRef<[u8]>>(slice: &[T]) -> Self {
+        let witness_elements = slice.len();
+        let index_size = witness_elements * 4;
+        let content_size = slice
+            .iter()
+            .map(|elem| elem.as_ref().len() + VarInt::from(elem.as_ref().len()).size())
+            .sum();
+
+        let mut content = vec![0u8; content_size + index_size];
+        let mut cursor = 0usize;
+        for (i, elem) in slice.iter().enumerate() {
+            encode_cursor(&mut content, content_size, i, cursor);
+            let elem_len_varint = VarInt::from(elem.as_ref().len());
+            elem_len_varint
+                .encode(&mut &mut content[cursor..cursor + elem_len_varint.size()])
+                .expect("writers on vec don't errors, space granted by content_size");
+            cursor += elem_len_varint.size();
+            content[cursor..cursor + elem.as_ref().len()].copy_from_slice(elem.as_ref());
+            cursor += elem.as_ref().len();
+        }
+
+        Witness {
+            witness_elements,
+            content,
+            indices_start: content_size,
+        }
     }
 }
 
@@ -72,6 +125,44 @@ impl Encodable for Witness {
         let content_len = content_with_indices_len - indices_size;
         w.emit_slice(&self.content[..content_len])?;
         Ok(content_len + len.size())
+    }
+}
+
+/// An iterator returning individual witness elements.
+pub struct Iter<'a> {
+    inner: &'a [u8],
+    indices_start: usize,
+    current_index: usize,
+}
+
+impl<'a> Iterator for Iter<'a> {
+    type Item = &'a [u8];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let index = decode_cursor(self.inner, self.indices_start, self.current_index)?;
+        let varint = VarInt::decode(&mut &self.inner[index..]).ok()?;
+        let start = index + varint.size();
+        let end = start + varint.0 as usize;
+        let slice = &self.inner[start..end];
+        self.current_index += 1;
+        Some(slice)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let total_count = (self.inner.len() - self.indices_start) / 4;
+        let remaining = total_count - self.current_index;
+        (remaining, Some(remaining))
+    }
+}
+
+impl<'a> ExactSizeIterator for Iter<'a> {}
+
+impl<'a> IntoIterator for &'a Witness {
+    type IntoIter = Iter<'a>;
+    type Item = &'a [u8];
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
     }
 }
 
@@ -141,6 +232,15 @@ impl Decodable for Witness {
     }
 }
 
+fn decode_cursor(bytes: &[u8], start_of_indices: usize, index: usize) -> Option<usize> {
+    let start = start_of_indices + index * 4;
+    let end = start + 4;
+    if end > bytes.len() {
+        None
+    } else {
+        Some(u32::from_ne_bytes(bytes[start..end].try_into().expect("is u32 size")) as usize)
+    }
+}
 /// Correctness Requirements: value must always fit within u32
 fn encode_cursor(bytes: &mut [u8], start_of_indices: usize, index: usize, value: usize) {
     let start = start_of_indices + index * 4;

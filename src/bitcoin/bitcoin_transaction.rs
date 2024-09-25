@@ -2,11 +2,14 @@ use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use super::{
     constants::{SEGWIT_FLAG, SEGWIT_MARKER},
     encoding::{decode::MAX_VEC_SIZE, utils::VarInt, Decodable, Encodable, ToU64},
-    types::{EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version},
+    types::{
+        EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version, Witness,
+    },
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
@@ -26,9 +29,28 @@ pub struct BitcoinTransaction {
     pub output: Vec<TxOut>,
 }
 
+// Function to compute sha256d (double SHA-256)
+fn sha256d(data: &[u8]) -> Vec<u8> {
+    let hash1 = Sha256::digest(data);
+    let hash2 = Sha256::digest(&hash1);
+    hash2.to_vec()
+}
+
 impl BitcoinTransaction {
-    pub fn build_for_signing(&self, sighash_type: EcdsaSighashType) -> Vec<u8> {
-        let mut buffer = self.encode_fields();
+    // Common
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut buffer = Vec::new();
+
+        let _ = self.encode(&mut buffer);
+
+        buffer
+    }
+
+    // Legacy
+    pub fn build_for_signing_legacy(&self, sighash_type: EcdsaSighashType) -> Vec<u8> {
+        let mut buffer = Vec::new();
+
+        let _ = self.encode(&mut buffer);
 
         // Sighash type
         buffer.extend_from_slice(&(sighash_type as u32).to_le_bytes());
@@ -44,45 +66,133 @@ impl BitcoinTransaction {
     ) -> Vec<u8> {
         match tx_type {
             TransactionType::P2PKH | TransactionType::P2SH => {
-                self.input[input_index].script_sig = script_sig;
+                self.input[input_index].script_sig = script_sig.clone();
             }
-            _ => {
-                panic!("Not implemented");
+            TransactionType::P2WPKH | TransactionType::P2WSH => {
+                panic!("Use build_with_witness for SegWit transactions");
             }
         }
 
-        self.encode_fields()
+        let mut buffer = Vec::new();
+        let _ = self.encode(&mut buffer);
+
+        buffer
     }
 
-    fn encode_fields(&self) -> Vec<u8> {
+    // Segwit
+    pub fn build_for_signing_segwit(
+        &self,
+        sighash_type: EcdsaSighashType,
+        input_index: usize,
+        script_code: &ScriptBuf,
+        value: u64,
+    ) -> Vec<u8> {
+        if self.version != Version::Two {
+            panic!("SegWit transactions must be version 2");
+        }
+
         let mut buffer = Vec::new();
 
+        self.encode_for_sighash_for_segwig(&mut buffer, input_index, script_code, value);
+
+        // Sighash type
+        buffer.extend_from_slice(&(sighash_type as u32).to_le_bytes());
+
+        buffer
+    }
+
+    pub fn build_with_witness(
+        &mut self,
+        input_index: usize,
+        witness: Vec<Vec<u8>>,
+        tx_type: TransactionType,
+    ) -> Vec<u8> {
+        match tx_type {
+            TransactionType::P2WPKH | TransactionType::P2WSH => {
+                self.input[input_index].witness = Witness::from_slice(&witness);
+            }
+            TransactionType::P2PKH | TransactionType::P2SH => {
+                panic!("Use build_with_script_sig for non-SegWit transactions");
+            }
+        }
+
+        let mut buffer = Vec::new();
+
+        let _ = self
+            .encode(&mut buffer)
+            .expect("Failed to encode transaction");
+
+        buffer
+    }
+
+    fn encode_for_sighash_for_segwig(
+        &self,
+        buffer: &mut Vec<u8>,
+        input_index: usize,
+        script_code: &ScriptBuf,
+        value: u64,
+    ) {
         // Version
-        self.version.encode(&mut buffer).unwrap();
+        self.version.encode(buffer).unwrap();
 
-        let uses_segwit_serialization =
-            self.input.iter().any(|input| !input.witness.is_empty()) || self.input.is_empty();
+        let has_witness = self.input.iter().any(|input| !input.witness.is_empty());
 
-        // BIP-141 (segwit) transaction serialization should include marker and flag.
-        if uses_segwit_serialization {
+        if has_witness {
+            // Marker and Flag
             buffer.push(SEGWIT_MARKER);
             buffer.push(SEGWIT_FLAG);
         }
 
-        self.input.encode(&mut buffer).unwrap();
-        self.output.encode(&mut buffer).unwrap();
-
-        // BIP-141 (segwit) transaction serialization also contains witness data.
-        if uses_segwit_serialization {
-            for input in &self.input {
-                input.witness.encode(&mut buffer).unwrap();
-            }
+        // Hash prevouts
+        let mut prevouts = Vec::new();
+        for input in &self.input {
+            input.previous_output.encode(&mut prevouts).unwrap();
         }
+        let prevouts_hash = sha256d(&prevouts);
+        buffer.extend_from_slice(&prevouts_hash);
+
+        // Hash sequences
+        let mut sequences = Vec::new();
+        for input in &self.input {
+            input.sequence.encode(&mut sequences).unwrap();
+        }
+        let sequences_hash = sha256d(&sequences);
+        buffer.extend_from_slice(&sequences_hash);
+
+        // Outpoint
+        self.input[input_index]
+            .previous_output
+            .encode(buffer)
+            .unwrap();
+
+        // Script code
+        script_code.encode(buffer).unwrap();
+
+        // Value
+        buffer.extend_from_slice(&value.to_le_bytes());
+
+        // Sequence
+        self.input[input_index].sequence.encode(buffer).unwrap();
+
+        // Hash outputs
+        let mut outputs = Vec::new();
+        for output in &self.output {
+            output.encode(&mut outputs).unwrap();
+        }
+        let outputs_hash = sha256d(&outputs);
+        buffer.extend_from_slice(&outputs_hash);
 
         // Locktime
-        self.lock_time.encode(&mut buffer).unwrap();
+        self.lock_time.encode(buffer).unwrap();
+    }
 
-        buffer
+    /// Returns whether or not to serialize transaction as specified in BIP-144.
+    fn uses_segwit_serialization(&self) -> bool {
+        if self.input.iter().any(|input| !input.witness.is_empty()) {
+            return true;
+        }
+        // To avoid serialization ambiguity, no inputs means we use BIP141 serialization
+        self.input.is_empty()
     }
 }
 
@@ -147,6 +257,30 @@ impl Decodable for Vec<TxOut> {
         Ok(ret)
     }
 }
+
+impl Encodable for BitcoinTransaction {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+        let mut len = 0;
+        len += self.version.encode(w)?;
+
+        // Legacy transaction serialization format only includes inputs and outputs.
+        if !self.uses_segwit_serialization() {
+            len += self.input.encode(w)?;
+            len += self.output.encode(w)?;
+        } else {
+            // BIP-141 (segwit) transaction serialization also includes marker, flag, and witness data.
+            len += SEGWIT_MARKER.encode(w)?;
+            len += SEGWIT_FLAG.encode(w)?;
+            len += self.input.encode(w)?;
+            len += self.output.encode(w)?;
+            for input in &self.input {
+                len += input.witness.encode(w)?;
+            }
+        }
+        len += self.lock_time.encode(w)?;
+        Ok(len)
+    }
+}
 #[cfg(test)]
 mod tests {
     // Omni imports
@@ -160,7 +294,6 @@ mod tests {
 
     // Rust Bitcoin imports
     use bitcoin::absolute::LockTime as RustBitcoinLockTime;
-    use bitcoin::consensus::Encodable;
     use bitcoin::hashes::Hash;
     use bitcoin::sighash::{EcdsaSighashType, SighashCache};
     use bitcoin::transaction::Sequence as RustBitcoinSequence;
@@ -174,7 +307,7 @@ mod tests {
     use bitcoin::{Amount, ScriptBuf};
 
     #[test]
-    fn test_build_for_signing_for_bitcoin_against_rust_bitcoin_for_version_1() {
+    fn test_build_for_signing_against_rust_bitcoin_for_version_1() {
         let height = 1000000;
         let version = 1;
         let mut tx = RustBitcoinTransaction {
@@ -227,14 +360,14 @@ mod tests {
             }],
         };
 
-        let serialized = omni_tx.build_for_signing(OmniSighashType::All);
+        let serialized = omni_tx.build_for_signing_legacy(OmniSighashType::All);
 
         assert_eq!(buffer.len(), serialized.len());
         assert_eq!(buffer, serialized);
     }
 
     #[test]
-    fn test_build_for_signing_for_bitcoin_against_rust_bitcoin_for_version_2() {
+    fn test_build_for_signing_for_against_rust_bitcoin_for_version_2() {
         let height = 1000000;
         let version = 2;
         let mut tx = RustBitcoinTransaction {
@@ -287,7 +420,75 @@ mod tests {
             }],
         };
 
-        let serialized = omni_tx.build_for_signing(OmniSighashType::All);
+        let serialized = omni_tx.build_for_signing_legacy(OmniSighashType::All);
+        println!("serialized BTC Omni: {:?}", serialized);
+
+        assert_eq!(buffer.len(), serialized.len());
+        assert_eq!(buffer, serialized);
+    }
+
+    #[test]
+    fn test_build_for_signing_against_rust_bitcoin_for_version_2_and_segwit() {
+        let height = 1000000;
+        let version = 2;
+        let mut tx = RustBitcoinTransaction {
+            version: RustBitcoinVersion(version),
+            lock_time: RustBitcoinLockTime::from_height(height).unwrap(),
+            input: vec![RustBitcoinTxIn {
+                previous_output: OutPoint {
+                    txid: Txid::from_raw_hash(Hash::all_zeros()),
+                    vout: 0,
+                },
+                script_sig: ScriptBuf::default(),
+                sequence: RustBitcoinSequence::default(),
+                witness: Witness::default(),
+            }],
+            output: vec![RustBitcoinTxOut {
+                value: Amount::from_sat(10000),
+                script_pubkey: ScriptBuf::default(),
+            }],
+        };
+
+        let sighash_type: EcdsaSighashType = EcdsaSighashType::All;
+        let mut sighasher = SighashCache::new(&mut tx);
+        let mut buffer: Vec<u8> = Vec::new();
+        sighasher
+            .segwit_v0_encode_signing_data_to(
+                &mut buffer,
+                0,
+                &ScriptBuf::default(),
+                Amount::from_sat(0),
+                sighash_type,
+            )
+            .map_err(|e| e)
+            .unwrap(); // Handle the Result
+
+        println!("serialized buffer {:?}", buffer);
+        // Omni implementation
+        let omni_tx = OmniBitcoinTransaction {
+            version: Version::Two,
+            lock_time: LockTime::from_height(height).unwrap(),
+            input: vec![TxIn {
+                previous_output: OmniOutPoint {
+                    txid: OmniTxid(OmniHash::all_zeros()),
+                    vout: 0,
+                },
+                script_sig: OmniScriptBuf::default(),
+                sequence: OmniSequence::default(),
+                witness: OmniWitness::default(),
+            }],
+            output: vec![TxOut {
+                value: OmniAmount::from_sat(10000),
+                script_pubkey: OmniScriptBuf::default(),
+            }],
+        };
+
+        let serialized = omni_tx.build_for_signing_segwit(
+            OmniSighashType::All,
+            0,
+            &&OmniScriptBuf::default(),
+            OmniAmount::from_sat(0).to_sat(),
+        );
         println!("serialized BTC Omni: {:?}", serialized);
 
         assert_eq!(buffer.len(), serialized.len());
