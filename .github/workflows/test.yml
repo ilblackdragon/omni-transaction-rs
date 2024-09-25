@@ -75,7 +75,7 @@ jobs:
         run: just test-unit
 
   integration-tests:
-    needs: [build, build-wasm] 
+    needs: [] 
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
@@ -86,7 +86,14 @@ jobs:
       - uses: ./.github/actions/install-just
       - uses: ./.github/actions/setup-rust
       - uses: foundry-rs/foundry-toolchain@v1
-      - name: Install bitcoind
-        run: sudo apt-get install -y bitcoind
-      - name: Run unit tests
+      - name: Add Bitcoin PPA and install bitcoind on Ubuntu
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo add-apt-repository ppa:bitcoin/bitcoin
+          sudo apt-get update
+          sudo apt-get install -y bitcoind
+      - name: Install bitcoind on macOS
+        if: matrix.platform == 'macos-latest'
+        run: brew install bitcoind
+      - name: Run integration tests
         run: just test-integration
