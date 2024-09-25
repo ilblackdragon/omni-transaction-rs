@@ -75,7 +75,7 @@ jobs:
         run: just test-unit
 
   integration-tests:
-    needs: [build, build-wasm] 
+    needs: [] 
     strategy:
       matrix:
         platform: [ubuntu-latest, macos-latest]
