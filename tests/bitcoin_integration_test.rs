@@ -20,8 +20,6 @@ use omni_transaction::types::BITCOIN;
 // Testing
 use eyre::Result;
 use serde_json::json;
-use std::fs;
-use std::path::PathBuf;
 use std::result::Result::Ok;
 
 mod utils;
@@ -30,14 +28,12 @@ pub use utils::bitcoin_utils::*;
 
 const OMNI_SPEND_AMOUNT: OmniAmount = OmniAmount::from_sat(500_000_000);
 
-fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
-    let tmpdir = PathBuf::from("bitcoin-testnet");
-    if !tmpdir.exists() {
-        fs::create_dir_all(&tmpdir).unwrap();
-    }
+use tempfile::TempDir;
 
+fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
+    let tmp_dir = TempDir::new().expect("Failed to create temp directory");
     let mut conf = bitcoind::Conf::default();
-    conf.tmpdir = Some(tmpdir);
+    conf.tmpdir = Some(tmp_dir.path().to_path_buf());
     Ok(bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap())
 }
 
@@ -47,8 +43,6 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
     let client = &bitcoind.client;
     let blockchain_info = client.get_blockchain_info().unwrap();
     assert_eq!(0, blockchain_info.blocks);
-
-    // let bitcoind = bitcoind::BitcoinD::new().unwrap();
 
     // Setup testing environment
     let mut btc_test_context = BTCTestContext::new(client).unwrap();
