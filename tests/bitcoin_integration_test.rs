@@ -30,8 +30,13 @@ const OMNI_SPEND_AMOUNT: OmniAmount = OmniAmount::from_sat(500_000_000);
 
 #[tokio::test]
 async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
-    let bitcoind = bitcoind::BitcoinD::from_downloaded().unwrap();
-    let client: &bitcoind::Client = &bitcoind.client;
+    let exe_path = bitcoind::exe_path().unwrap();
+    let bitcoind = bitcoind::BitcoinD::new(exe_path).unwrap();
+    let client = &bitcoind.client;
+    let blockchain_info = client.get_blockchain_info().unwrap();
+    assert_eq!(0, blockchain_info.blocks);
+
+    // let bitcoind = bitcoind::BitcoinD::new().unwrap();
 
     // Setup testing environment
     let mut btc_test_context = BTCTestContext::new(client).unwrap();
