@@ -21,7 +21,7 @@ impl ScriptBuf {
     /// Converts byte vector into script.
     ///
     /// This method doesn't (re)allocate.
-    pub fn from_bytes(bytes: Vec<u8>) -> Self {
+    pub const fn from_bytes(bytes: Vec<u8>) -> Self {
         Self(bytes)
     }
 }
