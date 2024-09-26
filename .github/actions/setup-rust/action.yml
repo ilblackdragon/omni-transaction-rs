@@ -7,6 +7,3 @@ runs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.toolchain }}
-    - uses: Swatinem/rust-cache@v2
-      with:
-        cache-on-failure: true
