@@ -43,6 +43,7 @@ near-workspaces = { version = "0.13.0", features = [
 near-jsonrpc-client = { git = "https://github.com/EdsonAlcala/near-jsonrpc-client-rs", tag = "v0.12.1" }
 
 # bitcoin
+tempfile = "3.3.0"
 bitcoin = { version = "0.32.0", default-features = false, features = [
     "std",
     "serde",

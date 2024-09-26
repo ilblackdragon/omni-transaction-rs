@@ -78,7 +78,7 @@ jobs:
     needs: [] 
     strategy:
       matrix:
-        platform: [ubuntu-latest]
+        platform: [ubuntu-latest, macos-latest]
         toolchain: [stable]
     runs-on: ${{ matrix.platform }}
     steps:

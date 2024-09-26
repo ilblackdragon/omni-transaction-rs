@@ -21,6 +21,7 @@ use omni_transaction::types::BITCOIN;
 use eyre::Result;
 use serde_json::json;
 use std::result::Result::Ok;
+use tempfile::TempDir;
 
 mod utils;
 
@@ -38,7 +39,12 @@ fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
     } else {
         return Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported platform").into());
     };
-    let bitcoind = bitcoind::BitcoinD::new(bitcoind_path).unwrap();
+
+    let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+    let mut conf = bitcoind::Conf::default();
+    conf.tmpdir = Some(temp_dir.path().to_path_buf());
+    let bitcoind = bitcoind::BitcoinD::with_conf(bitcoind_path, &conf).unwrap();
     Ok(bitcoind)
 }
 
