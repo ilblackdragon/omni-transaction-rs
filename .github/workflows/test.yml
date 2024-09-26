@@ -79,7 +79,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-latest]
-        toolchain: [stable]
+        toolchain: [stable, nightly]
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
