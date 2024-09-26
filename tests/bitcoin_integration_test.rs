@@ -20,8 +20,6 @@ use omni_transaction::types::BITCOIN;
 // Testing
 use eyre::Result;
 use serde_json::json;
-use std::fs;
-use std::path::PathBuf;
 use std::result::Result::Ok;
 
 mod utils;
@@ -31,14 +29,17 @@ pub use utils::bitcoin_utils::*;
 const OMNI_SPEND_AMOUNT: OmniAmount = OmniAmount::from_sat(500_000_000);
 
 fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
-    let tmpdir = PathBuf::from("bitcoin-testnet");
-    if !tmpdir.exists() {
-        fs::create_dir_all(&tmpdir).unwrap();
-    }
+    let curr_dir_path = std::env::current_dir().unwrap();
 
-    let mut conf = bitcoind::Conf::default();
-    conf.tmpdir = Some(tmpdir);
-    Ok(bitcoind::BitcoinD::from_downloaded_with_conf(&conf).unwrap())
+    let bitcoind_path = if cfg!(target_os = "macos") {
+        curr_dir_path.join("tests/bin").join("bitcoind-mac")
+    } else if cfg!(target_os = "linux") {
+        curr_dir_path.join("tests/bin").join("bitcoind-linux")
+    } else {
+        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported platform").into());
+    };
+    let bitcoind = bitcoind::BitcoinD::new(bitcoind_path).unwrap();
+    Ok(bitcoind)
 }
 
 #[tokio::test]
