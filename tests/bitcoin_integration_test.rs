@@ -30,22 +30,29 @@ pub use utils::bitcoin_utils::*;
 const OMNI_SPEND_AMOUNT: OmniAmount = OmniAmount::from_sat(500_000_000);
 
 fn setup_bitcoin_testnet() -> Result<bitcoind::BitcoinD> {
-    let curr_dir_path = std::env::current_dir().unwrap();
+    if std::env::var("CI_ENVIRONMENT").is_ok() {
+        let curr_dir_path = std::env::current_dir().unwrap();
 
-    let bitcoind_path = if cfg!(target_os = "macos") {
-        curr_dir_path.join("tests/bin").join("bitcoind-mac")
-    } else if cfg!(target_os = "linux") {
-        curr_dir_path.join("tests/bin").join("bitcoind-linux")
+        let bitcoind_path = if cfg!(target_os = "macos") {
+            curr_dir_path.join("tests/bin").join("bitcoind-mac")
+        } else if cfg!(target_os = "linux") {
+            curr_dir_path.join("tests/bin").join("bitcoind-linux")
+        } else {
+            return Err(
+                std::io::Error::new(std::io::ErrorKind::Other, "Unsupported platform").into(),
+            );
+        };
+
+        let temp_dir = TempDir::new().expect("Failed to create temp dir");
+
+        let mut conf = bitcoind::Conf::default();
+        conf.tmpdir = Some(temp_dir.path().to_path_buf());
+        let bitcoind = bitcoind::BitcoinD::with_conf(bitcoind_path, &conf).unwrap();
+        Ok(bitcoind)
     } else {
-        return Err(std::io::Error::new(std::io::ErrorKind::Other, "Unsupported platform").into());
-    };
-
-    let temp_dir = TempDir::new().expect("Failed to create temp dir");
-
-    let mut conf = bitcoind::Conf::default();
-    conf.tmpdir = Some(temp_dir.path().to_path_buf());
-    let bitcoind = bitcoind::BitcoinD::with_conf(bitcoind_path, &conf).unwrap();
-    Ok(bitcoind)
+        let bitcoind = bitcoind::BitcoinD::from_downloaded().unwrap();
+        Ok(bitcoind)
+    }
 }
 
 #[tokio::test]
@@ -204,8 +211,6 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
 
     let vout = first_unspent["vout"].as_u64().unwrap();
 
-    println!("tx id {:?}", omni_txid);
-    println!("vout {:?}", vout);
     // Create inputs using Omni library
     let txin: OmniTxIn = OmniTxIn {
         previous_output: OmniOutPoint::new(omni_txid, vout as u32),
@@ -213,15 +218,11 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         sequence: OmniSequence::MAX,
         witness: OmniWitness::default(),
     };
-
-    println!("tx in {:?}", txin);
-
     // The spend output is locked to a key controlled by the receiver. In this case to Alice.
     let spend_txout = OmniTxOut {
         value: OMNI_SPEND_AMOUNT,
         script_pubkey: OmniScriptBuf(alice.script_pubkey.as_bytes().to_vec()),
     };
-    println!("spend_txout {:?}", spend_txout);
 
     let utxo_amount =
         OmniAmount::from_sat((first_unspent["amount"].as_f64().unwrap() * 100_000_000.0) as u64);
@@ -235,7 +236,6 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         value: change_amount,
         script_pubkey: OmniScriptBuf(script_sig.as_bytes().to_vec()), // Change comes back to us.
     };
-    println!("change_txout {:?}", change_txout);
 
     let mut omni_tx: BitcoinTransaction = TransactionBuilder::new::<BITCOIN>()
         .version(OmniVersion::Two)
@@ -243,8 +243,6 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         .inputs(vec![txin])
         .outputs(vec![spend_txout, change_txout])
         .build();
-
-    println!("omni_tx {:?}", omni_tx);
 
     // Prepare the transaction for signing
     let sighash_type = OmniSighashType::All;
@@ -270,7 +268,6 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         .is_ok();
 
     assert!(is_valid, "The signature should be valid");
-    // println!("Is Valid {:?}", is_valid);
 
     // Encode the signature
     let signature = bitcoin::ecdsa::Signature {
@@ -278,20 +275,14 @@ async fn test_send_p2wpkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
         sighash_type: EcdsaSighashType::All,
     };
 
-    println!("signature_omni {:?}", sighash_omni);
-    println!("public key {:?}", &bob.public_key);
-
     // Create the witness
     let witness = Witness::p2wpkh(&signature, &bob.public_key);
 
     // Assign script_sig to txin
     let encoded_omni_tx = omni_tx.build_with_witness(0, witness.to_vec(), TransactionType::P2WPKH);
 
-    println!("encoded omni tx {:?}", encoded_omni_tx);
-
     // Convert the transaction to a hexadecimal string
-    let hex_omni_tx = hex::encode(encoded_omni_tx);
-    println!("hex omni tx {:?}", hex_omni_tx);
+    let _hex_omni_tx = hex::encode(encoded_omni_tx);
 
     // TODO: Fix broadcasting the transaction
     // let raw_tx_result: serde_json::Value = client

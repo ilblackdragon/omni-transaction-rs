@@ -88,3 +88,5 @@ jobs:
       - uses: foundry-rs/foundry-toolchain@v1
       - name: Run integration tests
         run: just test-integration
+        env:
+          CI_ENVIRONMENT: true
