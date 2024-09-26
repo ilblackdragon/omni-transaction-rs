@@ -15,14 +15,14 @@ impl ScriptBuf {
     /// Creates a [`ScriptBuf`] from a hex string.
     pub fn from_hex(s: &str) -> Result<Self, String> {
         let v = Vec::from_hex(s)?;
-        Ok(ScriptBuf::from_bytes(v))
+        Ok(Self::from_bytes(v))
     }
 
     /// Converts byte vector into script.
     ///
     /// This method doesn't (re)allocate.
     pub fn from_bytes(bytes: Vec<u8>) -> Self {
-        ScriptBuf(bytes)
+        Self(bytes)
     }
 }
 
