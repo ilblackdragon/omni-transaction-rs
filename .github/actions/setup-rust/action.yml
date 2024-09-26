@@ -7,3 +7,7 @@ runs:
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ matrix.toolchain }}
+    - uses: Swatinem/rust-cache@v2
+      with:
+        cache-on-failure: true
+        key: cargo-cache-${{ runner.os }}-${{ matrix.toolchain }}-${{ hashFiles('**/Cargo.lock', '**/*.rs') }}
