@@ -6,6 +6,10 @@ lint:
 fmt:
     cargo fmt --check
 
+# Check docs
+doc:
+    RUSTDOCFLAGS="-D warnings" cargo doc
+    
 # Verify all compiles
 check:
     cargo check
@@ -20,7 +24,7 @@ test-unit:
 
 # Run integration tests
 test-integration:
-    cargo test --test '*'
+    RUST_TEST_THREADS=1 cargo test --test '*'
 
 # Build the project
 build:

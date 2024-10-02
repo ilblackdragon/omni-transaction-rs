@@ -17,6 +17,13 @@ debug = false
 panic = "abort"
 overflow-checks = true
 
+[features]
+default = ["all"]
+all = ["near", "bitcoin", "evm"]
+bitcoin = ["sha2"]
+evm = []
+near = []
+
 [dependencies]
 rlp = "0.6.1"
 hex = "0.4.3"
@@ -25,6 +32,7 @@ near-sdk = { version = "5.3.0" }
 serde-big-array = "0.5.1"
 bs58 = "0.5.1"
 serde = "1.0"
+sha2 = { version = "0.10.8", optional = true }
 
 [dev-dependencies]
 # ethereum
@@ -40,7 +48,20 @@ near-workspaces = { version = "0.13.0", features = [
     "unstable",
 ] }
 near-jsonrpc-client = { git = "https://github.com/EdsonAlcala/near-jsonrpc-client-rs", tag = "v0.12.1" }
-sha2 = "0.10.8"
+
+# bitcoin
+tempfile = "3.3.0"
+bitcoin = { version = "0.32.0", default-features = false, features = [
+    "std",
+    "serde",
+    "rand-std",
+    "rand",
+    "secp-lowmemory",
+    "secp-recovery",
+] }
+bitcoind = { package = "bitcoind-json-rpc-regtest", version = "0.3.0", features = [
+    "26_0",
+] }
 
 # async
 tokio = { version = "1.38", features = ["full"] }
