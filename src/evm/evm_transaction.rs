@@ -122,12 +122,12 @@ impl EVMTransaction {
 
         let input = v["input"].as_str().unwrap_or_default().to_string();
         let input =
-            hex::decode(&input.strip_prefix("0x").unwrap_or("")).expect("input should be hex");
+            hex::decode(input.strip_prefix("0x").unwrap_or("")).expect("input should be hex");
 
         // TODO: Implement access list
         // let access_list = v["accessList"].as_str().unwrap_or_default().to_string();
 
-        Ok(EVMTransaction {
+        Ok(Self {
             chain_id,
             nonce,
             to: Some(to_parsed),
@@ -142,19 +142,17 @@ impl EVMTransaction {
 }
 
 fn parse_u64(value: &str) -> Result<u64, std::num::ParseIntError> {
-    if let Some(hex_str) = value.strip_prefix("0x") {
-        u64::from_str_radix(hex_str, 16)
-    } else {
-        value.parse::<u64>()
-    }
+    value.strip_prefix("0x").map_or_else(
+        || value.parse::<u64>(),
+        |hex_str| u64::from_str_radix(hex_str, 16),
+    )
 }
 
 fn parse_u128(value: &str) -> Result<u128, std::num::ParseIntError> {
-    if let Some(hex_str) = value.strip_prefix("0x") {
-        u128::from_str_radix(hex_str, 16)
-    } else {
-        value.parse::<u128>()
-    }
+    value.strip_prefix("0x").map_or_else(
+        || value.parse::<u128>(),
+        |hex_str| u128::from_str_radix(hex_str, 16),
+    )
 }
 
 #[cfg(test)]
