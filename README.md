@@ -11,7 +11,7 @@ Library to construct transactions for different chains inside Near contracts and
 
 - NEAR
 - Ethereum
-- Bitcoin (Coming soon)
+- Bitcoin
 
 ## Examples
 
