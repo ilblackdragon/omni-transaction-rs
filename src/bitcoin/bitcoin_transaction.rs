@@ -1,8 +1,7 @@
-use std::io::{BufRead, Write};
-
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::io::{BufRead, Write};
 
 use super::{
     constants::{SEGWIT_FLAG, SEGWIT_MARKER},
@@ -93,7 +92,7 @@ impl BitcoinTransaction {
 
         let mut buffer = Vec::new();
 
-        self.encode_for_sighash_for_segwig(&mut buffer, input_index, script_code, value);
+        self.encode_for_sighash_for_segwit(&mut buffer, input_index, script_code, value);
 
         // Sighash type
         buffer.extend_from_slice(&(sighash_type as u32).to_le_bytes());
@@ -125,7 +124,7 @@ impl BitcoinTransaction {
         buffer
     }
 
-    fn encode_for_sighash_for_segwig(
+    fn encode_for_sighash_for_segwit(
         &self,
         buffer: &mut Vec<u8>,
         input_index: usize,
@@ -193,6 +192,11 @@ impl BitcoinTransaction {
         }
         // To avoid serialization ambiguity, no inputs means we use BIP141 serialization
         self.input.is_empty()
+    }
+
+    pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
+        let tx: Self = near_sdk::serde_json::from_str(json)?;
+        Ok(tx)
     }
 }
 
@@ -492,5 +496,73 @@ mod tests {
 
         assert_eq!(buffer.len(), serialized.len());
         assert_eq!(buffer, serialized);
+    }
+
+    #[test]
+    fn test_from_json_bitcoin_transaction() {
+        let json = r#"
+        {
+            "version": "1",
+            "lock_time": "0",
+            "input": [
+                {
+                    "previous_output": {
+                        "txid": "bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a",
+                        "vout": 0
+                    },
+                    "script_sig": "",
+                    "sequence": 4294967295,
+                    "witness": []
+                }
+            ],
+            "output": [
+                {
+                    "value": 1,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad"
+                },
+                {
+                    "value": 2649,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ac"
+                }
+            ]
+        }
+        "#;
+
+        let tx = OmniBitcoinTransaction::from_json(json).unwrap();
+        println!("tx: {:?}", tx);
+    }
+
+    #[test]
+    fn test_from_json_bitcoin_transaction_2() {
+        let json = r#"
+        {
+            "version": "1",
+            "lock_time": "0",
+            "input": [
+                {
+                    "previous_output": {
+                        "txid": "bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a",
+                        "vout": 0
+                    },
+                    "script_sig": [],
+                    "sequence": 4294967295,
+                    "witness": []
+                }
+            ],
+            "output": [
+                {
+                    "value": 1,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad"
+                },
+                {
+                    "value": 2649,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ac"
+                }
+            ]
+        }
+        "#;
+
+        let tx = OmniBitcoinTransaction::from_json(json).unwrap();
+        println!("tx: {:?}", tx);
     }
 }

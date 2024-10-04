@@ -1,7 +1,11 @@
-use std::io::{self, BufRead, Write};
+use std::{
+    fmt,
+    io::{self, BufRead, Write},
+};
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use serde::Deserializer;
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
 
@@ -10,9 +14,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-#[derive(
-    Debug, Copy, PartialEq, Eq, Clone, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
-)]
+#[derive(Debug, Copy, PartialEq, Eq, Clone, Serialize, BorshSerialize, BorshDeserialize)]
 #[borsh(use_discriminant = true)]
 pub enum Version {
     /// The original Bitcoin transaction version (pre-BIP-68)
@@ -55,6 +57,63 @@ impl Decodable for Version {
                 "Invalid version number",
             )),
         }
+    }
+}
+
+impl<'de> Deserialize<'de> for Version {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct StringOrNumberVisitor;
+
+        impl<'de> serde::de::Visitor<'de> for StringOrNumberVisitor {
+            type Value = Version;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("a string or a number")
+            }
+
+            fn visit_str<E>(self, value: &str) -> Result<Version, E>
+            where
+                E: serde::de::Error,
+            {
+                let value_parsed = value
+                    .trim()
+                    .parse::<u32>()
+                    .map_err(serde::de::Error::custom)?;
+
+                match value_parsed {
+                    1 => Ok(Version::One),
+                    2 => Ok(Version::Two),
+                    _ => Err(serde::de::Error::custom("Invalid version number")),
+                }
+            }
+
+            fn visit_u32<E>(self, value: u32) -> Result<Version, E>
+            where
+                E: serde::de::Error,
+            {
+                match value {
+                    1 => Ok(Version::One),
+                    2 => Ok(Version::Two),
+                    _ => Err(serde::de::Error::custom("Invalid version number")),
+                }
+            }
+
+            fn visit_u64<E>(self, value: u64) -> Result<Version, E>
+            where
+                E: serde::de::Error,
+            {
+                match value {
+                    1 => Ok(Version::One),
+                    2 => Ok(Version::Two),
+                    _ => Err(serde::de::Error::custom("Invalid version number")),
+                }
+            }
+        }
+
+        deserializer.deserialize_any(StringOrNumberVisitor)
     }
 }
 
@@ -134,5 +193,19 @@ mod tests {
         let deserialized = Version::try_from_slice(&buf).unwrap();
 
         assert_eq!(version, deserialized);
+    }
+
+    #[test]
+    fn test_version_serde_deserialization() {
+        let json = r#"1"#;
+        let version: Version = serde_json::from_str(json).unwrap();
+        assert_eq!(version, Version::One);
+    }
+
+    #[test]
+    fn test_version_serde_deserialization_2() {
+        let json = r#"2"#;
+        let version: Version = serde_json::from_str(json).unwrap();
+        assert_eq!(version, Version::Two);
     }
 }
