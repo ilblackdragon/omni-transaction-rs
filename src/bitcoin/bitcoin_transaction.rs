@@ -564,5 +564,103 @@ mod tests {
 
         let tx = OmniBitcoinTransaction::from_json(json).unwrap();
         println!("tx: {:?}", tx);
+
+        assert_eq!(tx.version, Version::One);
+        assert_eq!(tx.lock_time, LockTime::from_height(0).unwrap());
+        // input
+        assert_eq!(tx.input[0].script_sig, OmniScriptBuf::default());
+        assert_eq!(tx.input[0].witness, OmniWitness::default());
+        assert_eq!(tx.input[0].sequence, OmniSequence(4294967295));
+        assert_eq!(
+            tx.input[0].previous_output,
+            OmniOutPoint {
+                txid: OmniTxid(
+                    OmniHash::from_hex(
+                        "bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a"
+                    )
+                    .unwrap()
+                ),
+                vout: 0
+            }
+        );
+        assert_eq!(tx.input.len(), 1);
+        // output
+        assert_eq!(
+            tx.output[0].script_pubkey,
+            OmniScriptBuf::from_hex("76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad").unwrap()
+        );
+        assert_eq!(
+            tx.output[1].script_pubkey,
+            OmniScriptBuf::from_hex("76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ac").unwrap()
+        );
+        assert_eq!(tx.output[0].value, OmniAmount::from_sat(1));
+        assert_eq!(tx.output[1].value, OmniAmount::from_sat(2649));
+        assert_eq!(tx.output.len(), 2);
+    }
+
+    #[test]
+    fn test_from_json_bitcoin_transaction_3() {
+        let json = r#"
+        {
+            "version": "2",
+            "lock_time": "0",
+            "input": [
+                {
+                    "previous_output": {
+                        "txid": "bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a",
+                        "vout": 0
+                    },
+                    "script_sig": [],
+                    "sequence": 4294967295,
+                    "witness": []
+                }
+            ],
+            "output": [
+                {
+                    "value": 1,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad"
+                },
+                {
+                    "value": 2649,
+                    "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ac"
+                }
+            ]
+        }
+        "#;
+
+        let tx = OmniBitcoinTransaction::from_json(json).unwrap();
+        println!("tx: {:?}", tx);
+
+        assert_eq!(tx.version, Version::Two);
+        assert_eq!(tx.lock_time, LockTime::from_height(0).unwrap());
+        // input
+        assert_eq!(tx.input[0].script_sig, OmniScriptBuf::default());
+        assert_eq!(tx.input[0].witness, OmniWitness::default());
+        assert_eq!(tx.input[0].sequence, OmniSequence(4294967295));
+        assert_eq!(
+            tx.input[0].previous_output,
+            OmniOutPoint {
+                txid: OmniTxid(
+                    OmniHash::from_hex(
+                        "bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a"
+                    )
+                    .unwrap()
+                ),
+                vout: 0
+            }
+        );
+        assert_eq!(tx.input.len(), 1);
+        // output
+        assert_eq!(
+            tx.output[0].script_pubkey,
+            OmniScriptBuf::from_hex("76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad").unwrap()
+        );
+        assert_eq!(
+            tx.output[1].script_pubkey,
+            OmniScriptBuf::from_hex("76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ac").unwrap()
+        );
+        assert_eq!(tx.output[0].value, OmniAmount::from_sat(1));
+        assert_eq!(tx.output[1].value, OmniAmount::from_sat(2649));
+        assert_eq!(tx.output.len(), 2);
     }
 }
