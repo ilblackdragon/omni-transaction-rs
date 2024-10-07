@@ -12,6 +12,7 @@ use super::{
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[serde(crate = "near_sdk::serde")]
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: Version,
