@@ -259,7 +259,7 @@ fn resize_if_needed(vec: &mut Vec<u8>, required_len: usize) {
     }
 }
 
-pub(crate) struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
+pub struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
 
 impl<'a> serde::Serialize for SerializeBytesAsHex<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -313,31 +313,31 @@ impl<'de> serde::Deserialize<'de> for Witness {
                 self,
                 mut a: A,
             ) -> Result<Self::Value, A::Error> {
-                use serde::de::{self, Unexpected};
-                let mut ret = match a.size_hint() {
-                    Some(len) => Vec::with_capacity(len),
-                    None => Vec::new(),
-                };
+                let mut ret = a.size_hint().map_or_else(Vec::new, Vec::with_capacity);
 
                 while let Some(elem) = a.next_element::<String>()? {
                     let vec = hex::decode(&elem).map_err(|e| match e {
                         hex::FromHexError::InvalidHexCharacter { c, .. } => {
-                            match core::char::from_u32(c.into()) {
-                                Some(c) => de::Error::invalid_value(
-                                    Unexpected::Char(c),
-                                    &"a valid hex character",
-                                ),
-                                None => de::Error::invalid_value(
-                                    Unexpected::Other("invalid hex character"),
-                                    &"a valid hex character",
-                                ),
-                            }
+                            core::char::from_u32(c.into()).map_or_else(
+                                || {
+                                    serde::de::Error::invalid_value(
+                                        serde::de::Unexpected::Other("invalid hex character"),
+                                        &"a valid hex character",
+                                    )
+                                },
+                                |c| {
+                                    serde::de::Error::invalid_value(
+                                        serde::de::Unexpected::Char(c),
+                                        &"a valid hex character",
+                                    )
+                                },
+                            )
                         }
                         hex::FromHexError::OddLength => {
-                            de::Error::invalid_length(0, &"an even length string")
+                            serde::de::Error::invalid_length(0, &"an even length string")
                         }
                         hex::FromHexError::InvalidStringLength => {
-                            de::Error::invalid_length(0, &"an even length string")
+                            serde::de::Error::invalid_length(0, &"an even length string")
                         }
                     })?;
                     ret.push(vec);
@@ -350,7 +350,7 @@ impl<'de> serde::Deserialize<'de> for Witness {
             deserializer.deserialize_seq(Visitor)
         } else {
             let vec: Vec<Vec<u8>> = serde::Deserialize::deserialize(deserializer)?;
-            Ok(Witness::from_slice(&vec))
+            Ok(Self::from_slice(&vec))
         }
     }
 }
