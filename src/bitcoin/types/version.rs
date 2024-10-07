@@ -14,7 +14,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-#[derive(Debug, Copy, PartialEq, Eq, Clone, Serialize, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize)]
 #[borsh(use_discriminant = true)]
 pub enum Version {
     /// The original Bitcoin transaction version (pre-BIP-68)
@@ -57,6 +57,19 @@ impl Decodable for Version {
                 "Invalid version number",
             )),
         }
+    }
+}
+
+impl Serialize for Version {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let version_number = match self {
+            Version::One => 1,
+            Version::Two => 2,
+        };
+        serializer.serialize_i32(version_number)
     }
 }
 
@@ -114,6 +127,12 @@ impl<'de> Deserialize<'de> for Version {
         }
 
         deserializer.deserialize_any(StringOrNumberVisitor)
+    }
+}
+
+impl fmt::Display for Version {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        fmt::Display::fmt(&self.to_string(), f)
     }
 }
 
@@ -180,6 +199,7 @@ mod tests {
     fn test_version_serde_serialization() {
         let version = Version::One;
         let serialized = serde_json::to_string(&version).unwrap();
+
         let deserialized: Version = serde_json::from_str(&serialized).unwrap();
 
         // Check that the version is the same after serde serialization and deserialization
