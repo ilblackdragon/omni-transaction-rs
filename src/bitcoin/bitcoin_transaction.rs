@@ -1,5 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 
@@ -11,7 +12,17 @@ use super::{
     },
 };
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+    JsonSchema,
+)]
 #[serde(crate = "near_sdk::serde")]
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).

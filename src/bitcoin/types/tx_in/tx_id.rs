@@ -5,11 +5,22 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 
 use super::hash::Hash;
 use borsh::{BorshDeserialize, BorshSerialize};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+    JsonSchema,
 )]
+#[serde(crate = "near_sdk::serde")]
 pub struct Txid(pub Hash);
 
 impl Txid {

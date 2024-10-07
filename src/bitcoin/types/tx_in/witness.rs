@@ -1,6 +1,8 @@
 use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use schemars::JsonSchema;
 
 use crate::bitcoin::encoding::{
     decode::MAX_VEC_SIZE, extensions::WriteExt, utils::VarInt, Decodable, Encodable,
@@ -16,7 +18,7 @@ use crate::bitcoin::encoding::{
 /// saving some allocations.
 ///
 /// [segwit upgrade]: <https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki>
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
 pub struct Witness {
     /// Contains the witness `Vec<Vec<u8>>` serialization.
     ///
@@ -261,10 +263,10 @@ fn resize_if_needed(vec: &mut Vec<u8>, required_len: usize) {
 
 pub struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
 
-impl<'a> serde::Serialize for SerializeBytesAsHex<'a> {
+impl<'a> Serialize for SerializeBytesAsHex<'a> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         use hex::ToHex;
 
@@ -273,10 +275,10 @@ impl<'a> serde::Serialize for SerializeBytesAsHex<'a> {
 }
 
 // Serde keep backward compatibility with old Vec<Vec<u8>> format
-impl serde::Serialize for Witness {
+impl Serialize for Witness {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
-        S: serde::Serializer,
+        S: Serializer,
     {
         use serde::ser::SerializeSeq;
 
@@ -295,10 +297,10 @@ impl serde::Serialize for Witness {
     }
 }
 
-impl<'de> serde::Deserialize<'de> for Witness {
+impl<'de> Deserialize<'de> for Witness {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
-        D: serde::Deserializer<'de>,
+        D: Deserializer<'de>,
     {
         struct Visitor; // Human-readable visitor.
 

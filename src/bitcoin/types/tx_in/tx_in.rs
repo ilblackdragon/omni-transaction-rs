@@ -1,10 +1,10 @@
 use std::io::{self, BufRead, Write};
 
-use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Deserialize, Serialize};
-
 use crate::bitcoin::encoding::{Decodable, Encodable};
 use crate::bitcoin::types::script_buf::ScriptBuf;
+use borsh::{BorshDeserialize, BorshSerialize};
+use near_sdk::serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 
 use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
 
@@ -17,7 +17,18 @@ use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
 /// ### Bitcoin Core References
 ///
 /// * [CTxIn definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L65)
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug,
+    Clone,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+    JsonSchema,
+)]
+#[serde(crate = "near_sdk::serde")]
 pub struct TxIn {
     /// The reference to the previous output that is being used as an input.
     pub previous_output: OutPoint,

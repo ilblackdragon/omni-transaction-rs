@@ -2,13 +2,24 @@ use core::fmt;
 use std::{io::BufRead, str::FromStr};
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::bitcoin::encoding::{encode::Encodable, extensions::WriteExt, Decodable};
 
 #[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+    Debug,
+    Copy,
+    Clone,
+    Eq,
+    PartialEq,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+    JsonSchema,
 )]
+#[serde(crate = "near_sdk::serde")]
 pub struct Hash(pub [u8; 32]);
 
 impl Hash {

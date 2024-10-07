@@ -2,10 +2,11 @@ use core::fmt;
 use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use schemars::JsonSchema;
 
 use crate::bitcoin::encoding::{encode::Encodable, Decodable};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
 pub struct ScriptBuf(pub Vec<u8>);
 
 impl ScriptBuf {

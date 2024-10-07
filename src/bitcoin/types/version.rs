@@ -5,6 +5,7 @@ use std::{
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 use serde::Deserializer;
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
@@ -14,7 +15,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize, JsonSchema)]
 #[borsh(use_discriminant = true)]
 pub enum Version {
     /// The original Bitcoin transaction version (pre-BIP-68)

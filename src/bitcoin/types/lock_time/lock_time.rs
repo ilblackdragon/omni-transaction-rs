@@ -11,6 +11,7 @@ use std::{
 
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
+use schemars::JsonSchema;
 use serde::Deserializer;
 
 /// Locktime itself is an unsigned 4-byte integer which can be parsed two ways:
@@ -23,7 +24,9 @@ use serde::Deserializer;
 /// The transaction can be added to any block whose block time is greater than the locktime.
 ///
 /// [Bitcoin Devguide]: https://developer.bitcoin.org/devguide/transactions.html#locktime-and-sequence-number
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, BorshSerialize, BorshDeserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
+)]
 pub struct LockTime(u32);
 
 impl LockTime {
