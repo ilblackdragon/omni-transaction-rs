@@ -103,8 +103,27 @@ impl<'de> serde::de::Visitor<'de> for OutPointVisitor {
         while let Some(key) = map.next_key::<String>()? {
             match key.as_str() {
                 "txid" => {
-                    let txid_str: String = map.next_value()?;
-                    let txid_bytes = hex::decode(&txid_str).map_err(serde::de::Error::custom)?;
+                    let txid_value: serde_json::Value = map.next_value()?;
+                    let txid_bytes = match txid_value {
+                        serde_json::Value::String(txid_str) => {
+                            hex::decode(&txid_str).map_err(serde::de::Error::custom)?
+                        }
+                        serde_json::Value::Array(txid_array) => txid_array
+                            .into_iter()
+                            .map(|x| {
+                                if let serde_json::Value::Number(num) = x {
+                                    if let Some(i) = num.as_u64() {
+                                        if i <= u8::MAX as u64 {
+                                            return Ok(i as u8);
+                                        }
+                                    }
+                                }
+                                Err(serde::de::Error::custom("Invalid number for u8"))
+                            })
+                            .collect::<Result<Vec<u8>, _>>()?,
+                        _ => return Err(serde::de::Error::custom("Invalid format for txid")),
+                    };
+
                     if txid_bytes.len() != 32 {
                         return Err(serde::de::Error::custom("Invalid txid length"));
                     }
@@ -201,6 +220,26 @@ mod tests {
                     )
                     .unwrap()
                 ),
+                vout: 0
+            }
+        );
+    }
+
+    #[test]
+    fn test_serde_json_outpoint_with_arrays() {
+        let json_string = r#"{
+            "txid": [59, 103, 22, 67, 189, 12, 138, 114, 42, 90, 207, 173, 211, 254, 197, 194, 92, 65, 224, 168, 146, 169, 213, 217, 184, 81, 123, 217, 19, 81, 69, 71],
+            "vout":"0"
+        }"#;
+
+        let outpoint: OutPoint = serde_json::from_str(json_string).unwrap();
+        assert_eq!(
+            outpoint,
+            OutPoint {
+                txid: Txid(Hash([
+                    59, 103, 22, 67, 189, 12, 138, 114, 42, 90, 207, 173, 211, 254, 197, 194, 92,
+                    65, 224, 168, 146, 169, 213, 217, 184, 81, 123, 217, 19, 81, 69, 71
+                ])),
                 vout: 0
             }
         );
