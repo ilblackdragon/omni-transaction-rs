@@ -1,7 +1,8 @@
 use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use serde::{Deserialize, Serialize};
+use near_sdk::serde::{Deserialize, Deserializer, Serialize, Serializer};
+use schemars::JsonSchema;
 
 use crate::bitcoin::encoding::{
     decode::MAX_VEC_SIZE, extensions::WriteExt, utils::VarInt, Decodable, Encodable,
@@ -17,7 +18,7 @@ use crate::bitcoin::encoding::{
 /// saving some allocations.
 ///
 /// [segwit upgrade]: <https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki>
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
 pub struct Witness {
     /// Contains the witness `Vec<Vec<u8>>` serialization.
     ///
@@ -257,5 +258,101 @@ fn resize_if_needed(vec: &mut Vec<u8>, required_len: usize) {
             new_len *= 2;
         }
         vec.resize(new_len, 0);
+    }
+}
+
+pub struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
+
+impl<'a> Serialize for SerializeBytesAsHex<'a> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use hex::ToHex;
+
+        serializer.collect_str(&format_args!("{}", self.0.encode_hex::<String>()))
+    }
+}
+
+// Serde keep backward compatibility with old Vec<Vec<u8>> format
+impl Serialize for Witness {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        use serde::ser::SerializeSeq;
+
+        let human_readable = serializer.is_human_readable();
+        let mut seq = serializer.serialize_seq(Some(self.witness_elements))?;
+
+        // Note that the `Iter` strips the varints out when iterating.
+        for elem in self.iter() {
+            if human_readable {
+                seq.serialize_element(&SerializeBytesAsHex(elem))?;
+            } else {
+                seq.serialize_element(&elem)?;
+            }
+        }
+        seq.end()
+    }
+}
+
+impl<'de> Deserialize<'de> for Witness {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct Visitor; // Human-readable visitor.
+
+        impl<'de> serde::de::Visitor<'de> for Visitor {
+            type Value = Witness;
+
+            fn expecting(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
+                write!(f, "a sequence of hex arrays")
+            }
+
+            fn visit_seq<A: serde::de::SeqAccess<'de>>(
+                self,
+                mut a: A,
+            ) -> Result<Self::Value, A::Error> {
+                let mut ret = a.size_hint().map_or_else(Vec::new, Vec::with_capacity);
+
+                while let Some(elem) = a.next_element::<String>()? {
+                    let vec = hex::decode(&elem).map_err(|e| match e {
+                        hex::FromHexError::InvalidHexCharacter { c, .. } => {
+                            core::char::from_u32(c.into()).map_or_else(
+                                || {
+                                    serde::de::Error::invalid_value(
+                                        serde::de::Unexpected::Other("invalid hex character"),
+                                        &"a valid hex character",
+                                    )
+                                },
+                                |c| {
+                                    serde::de::Error::invalid_value(
+                                        serde::de::Unexpected::Char(c),
+                                        &"a valid hex character",
+                                    )
+                                },
+                            )
+                        }
+                        hex::FromHexError::OddLength => {
+                            serde::de::Error::invalid_length(0, &"an even length string")
+                        }
+                        hex::FromHexError::InvalidStringLength => {
+                            serde::de::Error::invalid_length(0, &"an even length string")
+                        }
+                    })?;
+                    ret.push(vec);
+                }
+                Ok(Witness::from_slice(&ret))
+            }
+        }
+
+        if deserializer.is_human_readable() {
+            deserializer.deserialize_seq(Visitor)
+        } else {
+            let vec: Vec<Vec<u8>> = serde::Deserialize::deserialize(deserializer)?;
+            Ok(Self::from_slice(&vec))
+        }
     }
 }

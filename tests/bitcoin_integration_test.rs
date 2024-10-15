@@ -62,8 +62,6 @@ async fn test_send_p2pkh_using_rust_bitcoin_and_omni_library() -> Result<()> {
     let blockchain_info = client.get_blockchain_info().unwrap();
     assert_eq!(0, blockchain_info.blocks);
 
-    // let bitcoind = bitcoind::BitcoinD::new().unwrap();
-
     // Setup testing environment
     let mut btc_test_context = BTCTestContext::new(client).unwrap();
 

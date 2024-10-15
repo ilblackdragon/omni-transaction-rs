@@ -1,14 +1,25 @@
 use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
 
 /// Bitcoin transaction input sequence number.
 #[derive(
-    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
+    Debug,
+    Copy,
+    Clone,
+    PartialEq,
+    Eq,
+    Serialize,
+    Deserialize,
+    BorshSerialize,
+    BorshDeserialize,
+    JsonSchema,
 )]
+#[serde(crate = "near_sdk::serde")]
 pub struct Sequence(pub u32);
 
 impl Sequence {
