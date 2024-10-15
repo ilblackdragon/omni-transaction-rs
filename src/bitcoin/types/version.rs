@@ -67,8 +67,8 @@ impl Serialize for Version {
         S: serde::Serializer,
     {
         let version_number = match self {
-            Version::One => 1,
-            Version::Two => 2,
+            Self::One => 1,
+            Self::Two => 2,
         };
         serializer.serialize_i32(version_number)
     }
@@ -133,7 +133,11 @@ impl<'de> Deserialize<'de> for Version {
 
 impl fmt::Display for Version {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&self.to_string(), f)
+        let version_number = match self {
+            Self::One => "1",
+            Self::Two => "2",
+        };
+        write!(f, "{}", version_number)
     }
 }
 
