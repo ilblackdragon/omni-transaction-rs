@@ -14,13 +14,32 @@ pub struct Secp256K1PublicKey(pub [u8; SECP256K1_PUBLIC_KEY_LENGTH]);
 #[serde(crate = "near_sdk::serde")]
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
-#[derive(Serialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[derive(PartialEq, Eq, Debug, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
     ED25519(ED25519PublicKey),
     /// 512 bit elliptic curve based public-key used in Bitcoin's public-key cryptography.
     SECP256K1(Secp256K1PublicKey),
+}
+
+impl std::fmt::Display for PublicKey {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let (key_type, key_data) = match self {
+            Self::ED25519(public_key) => ("ed25519", &public_key.0[..]),
+            Self::SECP256K1(public_key) => ("secp256k1", &public_key.0[..]),
+        };
+        write!(fmt, "{key_type}:{}", bs58::encode(key_data).into_string())
+    }
+}
+
+impl Serialize for PublicKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.collect_str(self)
+    }
 }
 
 impl BorshSerialize for PublicKey {
@@ -235,8 +254,8 @@ mod tests {
 
             // Check if the JSON string contains the correct key type
             match key {
-                PublicKey::ED25519(_) => assert!(serialized.contains("ED25519")),
-                PublicKey::SECP256K1(_) => assert!(serialized.contains("SECP256K1")),
+                PublicKey::ED25519(_) => assert!(serialized.contains("ed25519")),
+                PublicKey::SECP256K1(_) => assert!(serialized.contains("secp256k1")),
             }
         }
     }

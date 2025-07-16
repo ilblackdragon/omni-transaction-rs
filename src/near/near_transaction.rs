@@ -162,7 +162,7 @@ mod tests {
                 }))],
                 omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
                     method_name: "function1".to_string(),
-                    args: vec![0x01, 0x02, 0x03],
+                    args: Base64VecU8(vec![0x01, 0x02, 0x03]),
                     gas: U64(100),
                     deposit: U128(1),
                 }))],

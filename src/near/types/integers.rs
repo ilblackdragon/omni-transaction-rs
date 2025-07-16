@@ -1,12 +1,13 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
+use serde::Serializer;
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema, Serialize)]
 pub struct U64(pub u64);
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, Serialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
 pub struct U128(pub u128);
 
 impl From<u64> for U64 {
@@ -18,6 +19,15 @@ impl From<u64> for U64 {
 impl From<u128> for U128 {
     fn from(value: u128) -> Self {
         Self(value)
+    }
+}
+
+impl Serialize for U128 {
+    fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.0.to_string())
     }
 }
 
@@ -150,7 +160,7 @@ mod tests {
         let u128_value = U128(12345678901234567890);
         let serialized = serde_json::to_string(&u128_value).unwrap();
 
-        assert_eq!(serialized, "12345678901234567890");
+        assert_eq!(serialized, "\"12345678901234567890\"");
     }
 
     #[test]

@@ -1,14 +1,23 @@
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
-use serde::de;
+use serde::{de, Serializer};
 
-#[derive(Serialize, Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
 pub struct BlockHash(pub [u8; 32]);
 
 impl From<[u8; 32]> for BlockHash {
     fn from(data: [u8; 32]) -> Self {
         Self(data)
+    }
+}
+
+impl Serialize for BlockHash {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&bs58::encode(&self.0).into_string())
     }
 }
 
