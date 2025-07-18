@@ -238,6 +238,32 @@ mod tests {
     use near_sdk::serde_json;
 
     #[test]
+    fn test_compare_serde_json_with_near_primitives() {
+        let public_key = PublicKey::ED25519(ED25519PublicKey([1; ED25519_PUBLIC_KEY_LENGTH]));
+        let public_key_json = serde_json::to_string(&public_key).unwrap();
+        let near_primitives_public_key = near_crypto::PublicKey::ED25519(
+            near_crypto::ED25519PublicKey([1; ED25519_PUBLIC_KEY_LENGTH]),
+        );
+        let near_primitives_public_key_json =
+            serde_json::to_string(&near_primitives_public_key).unwrap();
+
+        assert_eq!(public_key_json, near_primitives_public_key_json);
+
+        let public_key_secp256k1 =
+            PublicKey::SECP256K1(Secp256K1PublicKey([1; SECP256K1_PUBLIC_KEY_LENGTH]));
+        let public_key_secp256k1_json = serde_json::to_string(&public_key_secp256k1).unwrap();
+        let near_primitives_public_key_secp256k1 = near_crypto::PublicKey::SECP256K1(
+            near_crypto::Secp256K1PublicKey::from([1; SECP256K1_PUBLIC_KEY_LENGTH]),
+        );
+        let near_primitives_public_key_secp256k1_json =
+            serde_json::to_string(&near_primitives_public_key_secp256k1).unwrap();
+        assert_eq!(
+            public_key_secp256k1_json,
+            near_primitives_public_key_secp256k1_json
+        );
+    }
+
+    #[test]
     fn test_public_key_serde_json_serialization() {
         let ed25519_key = PublicKey::ED25519(ED25519PublicKey([8; ED25519_PUBLIC_KEY_LENGTH]));
         let secp256k1_key =

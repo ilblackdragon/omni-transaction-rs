@@ -32,6 +32,7 @@ pub struct NearTransaction {
     pub signer_id: AccountId,
     /// A public key of the access key which was used to sign an account.
     /// Access key holds permissions for calling certain kinds of actions.
+    #[serde(rename = "public_key")]
     pub signer_public_key: PublicKey,
     /// Nonce is used to determine order of transaction in the pool.
     /// It increments for a combination of `signer_id` and `public_key`
@@ -400,6 +401,49 @@ mod tests {
             };
 
             let serialized_omni_tx = omni_tx.build_for_signing();
+
+            assert_eq!(
+                serialized_near_primitive_v0_tx, serialized_omni_tx,
+                "Test case {i} failed: serialized transactions do not match.\nNEAR: {serialized_near_primitive_v0_tx:?}\nOmni: {serialized_omni_tx:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn test_compare_serde_json_with_near_primitives() {
+        let test_cases = create_test_cases();
+
+        for (i, test_case) in test_cases.iter().enumerate() {
+            let near_primitive_v0_tx: TransactionV0 = TransactionV0 {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                public_key: PublicKey::ED25519(ED25519PublicKey(
+                    test_case
+                        .signer_public_key
+                        .to_public_key_as_bytes()
+                        .unwrap()
+                        .try_into()
+                        .expect("Public key should be 32 bytes"),
+                )),
+                nonce: test_case.nonce,
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: CryptoHash(test_case.block_hash.to_fixed_32_bytes().unwrap()),
+                actions: test_case.near_primitive_actions.clone(),
+            };
+
+            let serialized_near_primitive_v0_tx = serde_json::to_string(&near_primitive_v0_tx)
+                .expect("failed to serialize NEAR transaction");
+
+            let omni_tx = NearTransaction {
+                signer_id: test_case.signer_id.parse().unwrap(),
+                signer_public_key: test_case.signer_public_key.to_public_key().unwrap(),
+                nonce: U64(test_case.nonce),
+                receiver_id: test_case.receiver_id.parse().unwrap(),
+                block_hash: test_case.block_hash.to_block_hash().unwrap(),
+                actions: test_case.omni_actions.clone(),
+            };
+
+            let serialized_omni_tx =
+                serde_json::to_string(&omni_tx).expect("failed to serialize Omni transaction");
 
             assert_eq!(
                 serialized_near_primitive_v0_tx, serialized_omni_tx,

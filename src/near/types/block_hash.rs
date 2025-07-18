@@ -72,6 +72,17 @@ mod tests {
     use near_sdk::serde_json;
 
     #[test]
+    fn test_compare_serde_json_with_near_primitives() {
+        let block_hash = BlockHash([1; 32]);
+        let block_hash_json = serde_json::to_string(&block_hash).unwrap();
+        let near_primitives_block_hash = near_primitives::hash::CryptoHash(block_hash.0);
+        let near_primitives_block_hash_json =
+            serde_json::to_string(&near_primitives_block_hash).unwrap();
+
+        assert_eq!(block_hash_json, near_primitives_block_hash_json);
+    }
+
+    #[test]
     fn test_blockhash_deserialize_from_bytes() {
         let bytes: [u8; 32] = [1; 32];
         let bytes_as_json: String = serde_json::to_string(&bytes).unwrap();
