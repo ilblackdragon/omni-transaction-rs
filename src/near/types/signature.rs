@@ -121,7 +121,7 @@ mod tests {
             s: bytes[COMPONENT_SIZE..].try_into().unwrap(),
         });
         let signature_json = serde_json::to_string(&signature).unwrap();
-        let near_primitives_signature = near_crypto::Signature::ED25519(bytes.try_into().unwrap());
+        let near_primitives_signature = near_crypto::Signature::ED25519(bytes.into());
         let near_primitives_signature_json =
             serde_json::to_string(&near_primitives_signature).unwrap();
 
