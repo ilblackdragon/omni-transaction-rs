@@ -77,11 +77,11 @@ mod tests {
 
     use super::*;
     use crate::near::types::{
-        vector::Base64VecU8, AccessKey as OmniAccessKey,
-        AccessKeyPermission as OmniAccessKeyPermission, Action as OmniAction,
-        AddKeyAction as OmniAddKeyAction, CreateAccountAction as OmniCreateAccountAction,
-        DelegateAction as OmniDelegateAction, DeleteAccountAction as OmniDeleteAccountAction,
-        DeleteKeyAction as OmniDeleteKeyAction, DeployContractAction as OmniDeployContractAction,
+        AccessKey as OmniAccessKey, AccessKeyPermission as OmniAccessKeyPermission,
+        Action as OmniAction, AddKeyAction as OmniAddKeyAction,
+        CreateAccountAction as OmniCreateAccountAction, DelegateAction as OmniDelegateAction,
+        DeleteAccountAction as OmniDeleteAccountAction, DeleteKeyAction as OmniDeleteKeyAction,
+        DeployContractAction as OmniDeployContractAction,
         DeployGlobalContractAction as OmniDeployGlobalContractAction, ED25519Signature,
         FunctionCallAction as OmniFunctionCallAction,
         GlobalContractDeployMode as OmniGlobalContractDeployMode,
@@ -145,7 +145,7 @@ mod tests {
                     code: vec![0x01, 0x02, 0x03],
                 })],
                 omni_actions: vec![OmniAction::DeployContract(OmniDeployContractAction {
-                    code: Base64VecU8(vec![0x01, 0x02, 0x03]),
+                    code: vec![0x01, 0x02, 0x03],
                 })],
             },
             // Function Call
@@ -163,7 +163,7 @@ mod tests {
                 }))],
                 omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
                     method_name: "function1".to_string(),
-                    args: Base64VecU8(vec![0x01, 0x02, 0x03]),
+                    args: vec![0x01, 0x02, 0x03],
                     gas: U64(100),
                     deposit: U128(1),
                 }))],
@@ -323,7 +323,7 @@ mod tests {
                 })],
                 omni_actions: vec![
                     OmniAction::DeployGlobalContract(OmniDeployGlobalContractAction {
-                        code: Base64VecU8(vec![0x01, 0x02, 0x03]),
+                        code: vec![0x01, 0x02, 0x03],
                         deploy_mode: OmniGlobalContractDeployMode::AccountId,
                     }),
                 ],

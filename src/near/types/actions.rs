@@ -1,4 +1,7 @@
-use crate::near::types::{vector::Base64VecU8, BlockHash, PublicKey, Signature};
+use crate::near::{
+    types::{BlockHash, PublicKey, Signature},
+    utils::base64_serialization,
+};
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
 use near_sdk::AccountId;
@@ -49,7 +52,11 @@ pub enum Action {
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployGlobalContractAction {
-    pub code: Base64VecU8,
+    #[serde(
+        serialize_with = "base64_serialization::serialize",
+        deserialize_with = "base64_serialization::deserialize"
+    )]
+    pub code: Vec<u8>,
     pub deploy_mode: GlobalContractDeployMode,
 }
 
@@ -136,7 +143,11 @@ pub struct CreateAccountAction {}
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployContractAction {
-    pub code: Base64VecU8,
+    #[serde(
+        serialize_with = "base64_serialization::serialize",
+        deserialize_with = "base64_serialization::deserialize"
+    )]
+    pub code: Vec<u8>,
 }
 
 #[derive(
@@ -153,7 +164,11 @@ pub struct DeployContractAction {
 #[serde(crate = "near_sdk::serde")]
 pub struct FunctionCallAction {
     pub method_name: String,
-    pub args: Base64VecU8,
+    #[serde(
+        serialize_with = "base64_serialization::serialize",
+        deserialize_with = "base64_serialization::deserialize"
+    )]
+    pub args: Vec<u8>,
     pub gas: U64,
     pub deposit: U128,
 }
@@ -393,7 +408,7 @@ mod tests {
             ),
             (
                 Action::DeployContract(DeployContractAction {
-                    code: Base64VecU8(vec![1, 2, 3]),
+                    code: vec![1, 2, 3],
                 }),
                 NearPrimitiveAction::DeployContract(NearPrimitiveDeployContractAction {
                     code: vec![1, 2, 3],
@@ -402,7 +417,7 @@ mod tests {
             (
                 Action::FunctionCall(Box::new(FunctionCallAction {
                     method_name: "test".to_string(),
-                    args: Base64VecU8(vec![4, 5, 6]),
+                    args: vec![4, 5, 6],
                     gas: U64(1000000),
                     deposit: U128(0),
                 })),
@@ -477,7 +492,7 @@ mod tests {
             ),
             (
                 Action::DeployGlobalContract(DeployGlobalContractAction {
-                    code: Base64VecU8(vec![3, 4, 5]),
+                    code: vec![3, 4, 5],
                     deploy_mode: GlobalContractDeployMode::CodeHash,
                 }),
                 NearPrimitiveAction::DeployGlobalContract(
