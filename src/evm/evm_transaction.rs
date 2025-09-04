@@ -5,9 +5,8 @@ use crate::constants::EIP_1559_TYPE;
 use near_sdk::serde::{Deserialize, Serialize};
 use rlp::RlpStream;
 use schemars::JsonSchema;
-use serde::de::{Error as DeError, Unexpected, Visitor};
+use serde::de::{Error as DeError, Visitor};
 use serde::Deserializer;
-use serde_json::Value;
 use std::fmt;
 
 ///
