@@ -1,6 +1,6 @@
 [package]
 name = "omni-transaction"
-version = "0.2.3"
+version = "0.2.4"
 authors = ["Proximity Labs Limited"]
 license = "Apache-2.0"
 edition = "2021"

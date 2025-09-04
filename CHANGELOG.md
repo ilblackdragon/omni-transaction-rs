@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4](https://github.com/near/omni-transaction-rs/compare/v0.2.3...v0.2.4) - 2025-09-04
+
+### Other
+
+- Supported evm transaction string types ([#34](https://github.com/near/omni-transaction-rs/pull/34))
+
 ## [0.2.3](https://github.com/near/omni-transaction-rs/compare/v0.2.2...v0.2.3) - 2025-07-19
 
 ### Added
