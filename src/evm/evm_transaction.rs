@@ -1,12 +1,14 @@
 //! EVM transaction
+use super::types::{AccessList, Address, Signature};
+use super::utils::parse_eth_address;
+use crate::constants::EIP_1559_TYPE;
 use near_sdk::serde::{Deserialize, Serialize};
 use rlp::RlpStream;
 use schemars::JsonSchema;
-
-use crate::constants::EIP_1559_TYPE;
-
-use super::types::{AccessList, Address, Signature};
-use super::utils::parse_eth_address;
+use serde::de::{Error as DeError, Unexpected, Visitor};
+use serde::Deserializer;
+use serde_json::Value;
+use std::fmt;
 
 ///
 /// ###### Example:
@@ -36,13 +38,20 @@ use super::utils::parse_eth_address;
 #[derive(Debug, Serialize, Deserialize, JsonSchema, Clone)]
 #[serde(crate = "near_sdk::serde")]
 pub struct EVMTransaction {
+    #[serde(deserialize_with = "deserialize_u64")]
     pub chain_id: u64,
+    #[serde(deserialize_with = "deserialize_u64")]
     pub nonce: u64,
+    #[serde(deserialize_with = "deserialize_address")]
     pub to: Option<Address>,
+    #[serde(deserialize_with = "deserialize_u128")]
     pub value: u128,
     pub input: Vec<u8>,
+    #[serde(deserialize_with = "deserialize_u128")]
     pub gas_limit: u128,
+    #[serde(deserialize_with = "deserialize_u128")]
     pub max_fee_per_gas: u128,
+    #[serde(deserialize_with = "deserialize_u128")]
     pub max_priority_fee_per_gas: u128,
     pub access_list: AccessList,
 }
@@ -182,8 +191,142 @@ fn parse_u128(value: &str) -> Result<u128, std::num::ParseIntError> {
     )
 }
 
+fn deserialize_address<'de, D>(deserializer: D) -> Result<Option<Address>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::{Error as DeError, Unexpected};
+    use serde_json::Value;
+
+    let value = Value::deserialize(deserializer)?;
+
+    if value.is_null() {
+        return Ok(None);
+    }
+
+    // Handle array cases
+    if let Some(arr) = value.as_array() {
+        if arr.len() != 20 {
+            return Err(DeError::invalid_length(arr.len(), &"20-byte address"));
+        }
+
+        let mut out = [0u8; 20];
+
+        // Case: [133, 138, ...]
+        if arr.iter().all(|v| v.is_u64()) {
+            for (i, v) in arr.iter().enumerate() {
+                let n = v
+                    .as_u64()
+                    .ok_or_else(|| DeError::invalid_type(Unexpected::Other("not a u64"), &"u8"))?;
+                out[i] = n as u8;
+            }
+            return Ok(Some(out));
+        }
+
+        // Case: ["133", "138", ...]
+        if arr.iter().all(|v| v.is_string()) {
+            for (i, v) in arr.iter().enumerate() {
+                let s = v
+                    .as_str()
+                    .ok_or_else(|| {
+                        DeError::invalid_type(Unexpected::Other("not a string"), &"string")
+                    })?
+                    .trim();
+
+                let byte = s.parse::<u8>().map_err(|_| {
+                    DeError::invalid_value(Unexpected::Str(s), &"a string representing a u8")
+                })?;
+
+                out[i] = byte;
+            }
+            return Ok(Some(out));
+        }
+
+        return Err(DeError::invalid_type(
+            Unexpected::Other("invalid address format"),
+            &"array of u8 or array of numeric strings",
+        ));
+    }
+
+    Err(DeError::invalid_type(
+        Unexpected::Other("unexpected format for address"),
+        &"null or array of 20 bytes",
+    ))
+}
+
+pub fn deserialize_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct U64FlexibleVisitor;
+
+    impl<'de> Visitor<'de> for U64FlexibleVisitor {
+        type Value = u64;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a u64 or a string representing a u64")
+        }
+
+        fn visit_u64<E: DeError>(self, v: u64) -> Result<Self::Value, E> {
+            Ok(v)
+        }
+
+        fn visit_str<E: DeError>(self, s: &str) -> Result<Self::Value, E> {
+            s.parse::<u64>()
+                .map_err(|_| DeError::custom(format!("invalid u64 string: {}", s)))
+        }
+    }
+
+    deserializer.deserialize_any(U64FlexibleVisitor)
+}
+
+pub fn deserialize_u128<'de, D>(deserializer: D) -> Result<u128, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct U128FlexibleVisitor;
+
+    impl<'de> Visitor<'de> for U128FlexibleVisitor {
+        type Value = u128;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("a u128 or a string representing a u128")
+        }
+
+        fn visit_u64<E: DeError>(self, value: u64) -> Result<Self::Value, E> {
+            Ok(value as u128)
+        }
+
+        fn visit_u128<E: DeError>(self, value: u128) -> Result<Self::Value, E> {
+            Ok(value)
+        }
+
+        fn visit_str<E: DeError>(self, value: &str) -> Result<Self::Value, E> {
+            value
+                .parse::<u128>()
+                .map_err(|_| DeError::custom(format!("invalid u128 string: {}", value)))
+        }
+    }
+
+    deserializer.deserialize_any(U128FlexibleVisitor)
+}
+
 #[cfg(test)]
 mod tests {
+    use serde::{Deserialize, Serialize};
+
+    #[derive(Deserialize, Serialize, Debug)]
+    pub struct SignCallbackArgs {
+        pub nonce: u64,
+        pub tx_type: u8,
+        pub ethereum_tx: EVMTransaction,
+    }
+
+    #[derive(Deserialize, Debug)]
+    struct Dummy {
+        to: Option<[u8; 20]>,
+    }
+
     use alloy::{
         consensus::{SignableTransaction, TxEip1559},
         network::TransactionBuilder,
@@ -429,6 +572,90 @@ mod tests {
             evm_tx2.input,
             hex!("6a627842000000000000000000000000525521d79134822a342d330bd91DA67976569aF1")
                 .to_vec()
+        );
+    }
+
+    #[test]
+    fn test_deserialize_to_as_array_of_strings() {
+        let json = r#"
+    {
+        "nonce": 0,
+        "tx_type": 4,
+        "ethereum_tx": {
+            "to": ["133", "138", "138", "255", "241", "27", "252", "203", "97", "230", "157", "168", "126", "186", "30", "204", "204", "52", "198", "64"],
+            "input": [1, 2, 3],
+            "nonce": "0",
+            "value": "0",
+            "chain_id": "421614",
+            "gas_limit": "44386",
+            "access_list": [],
+            "max_fee_per_gas": "20000000000",
+            "max_priority_fee_per_gas": "1000000000"
+        }
+    }
+    "#;
+
+        let result: Result<SignCallbackArgs, _> = serde_json::from_str(json);
+        assert!(
+            result.is_ok(),
+            "Expected to deserialize but got error: {:?}",
+            result.err()
+        );
+    }
+
+    #[test]
+    fn test_deserialize_to_example_with_zeros() {
+        let json = r#"
+    {
+        "nonce": 0,
+        "tx_type": 4,
+        "ethereum_tx": {
+            "to": ["0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
+            "input": [1, 2, 3],
+            "nonce": "0",
+            "value": "0",
+            "chain_id": "421614",
+            "gas_limit": "44386",
+            "access_list": [],
+            "max_fee_per_gas": "20000000000",
+            "max_priority_fee_per_gas": "1000000000"
+        }
+    }"#;
+
+        let result: Result<SignCallbackArgs, _> = serde_json::from_str(json);
+        if let Err(e) = &result {
+            println!("[TEST ERROR] Deserialization failed: {:?}", e);
+        }
+        assert!(
+            result.is_ok(),
+            "Expected deserialization to work with array of zeros"
+        );
+    }
+
+    #[test]
+    fn test_deserialize_to_works_with_array_of_numbers() {
+        let json = r#"
+    {
+        "nonce": 0,
+        "tx_type": 4,
+        "ethereum_tx": {
+            "to": [133, 138, 138, 255, 241, 27, 252, 203, 97, 230, 157, 168, 126, 186, 30, 204, 204, 52, 198, 64],
+            "input": [1, 2, 3],
+            "nonce": "0",
+            "value": "0",
+            "chain_id": "421614",
+            "gas_limit": "44386",
+            "access_list": [],
+            "max_fee_per_gas": "20000000000",
+            "max_priority_fee_per_gas": "1000000000"
+        }
+    }
+    "#;
+
+        let result: Result<SignCallbackArgs, _> = serde_json::from_str(json);
+        assert!(
+            result.is_ok(),
+            "Expected deserialization to work with array of numbers"
         );
     }
 }
