@@ -321,11 +321,6 @@ mod tests {
         pub ethereum_tx: EVMTransaction,
     }
 
-    #[derive(Deserialize, Debug)]
-    struct Dummy {
-        to: Option<[u8; 20]>,
-    }
-
     use alloy::{
         consensus::{SignableTransaction, TxEip1559},
         network::TransactionBuilder,
