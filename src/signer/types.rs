@@ -23,7 +23,7 @@ pub struct SerializableScalar {
     pub scalar: String,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub struct SignRequest {
     pub payload: [u8; 32],
