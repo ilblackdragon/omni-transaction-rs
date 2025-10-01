@@ -52,10 +52,8 @@ pub enum Action {
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployGlobalContractAction {
-    #[serde(
-        serialize_with = "base64_serialization::serialize",
-        deserialize_with = "base64_serialization::deserialize"
-    )]
+    #[serde(with = "crate::near::utils::base64_serialization")]
+    #[schemars(with = "String")]
     pub code: Vec<u8>,
     pub deploy_mode: GlobalContractDeployMode,
 }
@@ -143,10 +141,8 @@ pub struct CreateAccountAction {}
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployContractAction {
-    #[serde(
-        serialize_with = "base64_serialization::serialize",
-        deserialize_with = "base64_serialization::deserialize"
-    )]
+    #[serde(with = "crate::near::utils::base64_serialization")]
+    #[schemars(with = "String")]
     pub code: Vec<u8>,
 }
 
@@ -164,10 +160,8 @@ pub struct DeployContractAction {
 #[serde(crate = "near_sdk::serde")]
 pub struct FunctionCallAction {
     pub method_name: String,
-    #[serde(
-        serialize_with = "base64_serialization::serialize",
-        deserialize_with = "base64_serialization::deserialize"
-    )]
+    #[serde(with = "crate::near::utils::base64_serialization")]
+    #[schemars(with = "String")]
     pub args: Vec<u8>,
     pub gas: U64,
     pub deposit: U128,
