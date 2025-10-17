@@ -2,13 +2,28 @@ use near_sdk::ext_contract;
 use near_sdk::serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 
+// Breaking change here, possible to keep backwards compatibility?
+// Need to look at the old MPC contract to see what it is was returning and how the MPC migrated to the new format
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
+#[serde(crate = "near_sdk::serde", tag = "scheme")]
+pub enum SignatureResponse {
+    Secp256k1(Secp256k1Signature),
+    Ed25519 { signature: Ed25519Signature },
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
-pub struct SignatureResponse {
+pub struct Secp256k1Signature {
     pub big_r: SerializableAffinePoint,
     pub s: SerializableScalar,
     pub recovery_id: u8,
 }
+
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
+#[serde(crate = "near_sdk::serde")]
+pub struct Ed25519Signature(
+    pub Vec<u8>,
+);
 
 #[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
