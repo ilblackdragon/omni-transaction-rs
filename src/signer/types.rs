@@ -46,27 +46,32 @@ pub struct SignRequest {
     pub key_version: u32,
 }
 
+/// A signature payload; the right payload must be passed in for the curve.
+/// The json encoding for this payload converts the bytes to hex string.
 #[derive(Debug, Serialize, Deserialize, Clone, JsonSchema)]
 #[serde(crate = "near_sdk::serde")]
 pub enum Payload {
-    Ecdsa([u8; 32]),
-    Ed25519(Vec<u8>), // For Ed25519, one should use the constructor to enforce correct payload length
+    Ecdsa(String), // Hex-encoded 32 bytes
+    Eddsa(String), // Hex-encoded 32-1232 bytes
 }
 
-// Constructors for Payload to enforce correct payload length for Ed25519
 impl Payload {
-    pub fn new_ecdsa(payload: [u8; 32]) -> Self {
-        Payload::Ecdsa(payload)
+    pub fn from_legacy_ecdsa(bytes: [u8; 32]) -> Self {
+        Payload::Ecdsa(hex::encode(bytes))
     }
-    
-    pub fn new_ed25519(payload: Vec<u8>) -> Result<Self, String> {
-        if payload.len() < 32 {
-            return Err("Ed25519 payload must be at least 32 bytes".to_string());
+
+    pub fn as_ecdsa(&self) -> Option<&str> {
+        match self {
+            Payload::Ecdsa(hex) => Some(hex),
+            _ => None,
         }
-        if payload.len() > 1232 {
-            return Err("Ed25519 payload must be at most 1232 bytes".to_string());
+    }
+
+    pub fn as_eddsa(&self) -> Option<&str> {
+        match self {
+            Payload::Eddsa(hex) => Some(hex),
+            _ => None,
         }
-        Ok(Payload::Ed25519(payload))
     }
 }
 
@@ -80,17 +85,19 @@ pub struct SignRequestArgs {
 
 // Validation function for SignRequestArgs
 impl SignRequestArgs {
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate_payload_length(&self) -> Result<(), String> {
         match &self.payload_v2 {
-            Payload::Ecdsa(_) => Ok(()),
-            Payload::Ed25519(data) => {
-                if data.len() < 32 {
-                    Err("Ed25519 payload must be at least 32 bytes".to_string())
-                } else if data.len() > 1232 {
-                    Err("Ed25519 payload must be at most 1232 bytes".to_string())
-                } else {
-                    Ok(())
+            Payload::Ecdsa(hex) => {
+                if hex.len() != 64 { 
+                    return Err("Ecdsa payload must be 64 hex characters (32 bytes)".to_string());
                 }
+                Ok(())
+            },
+            Payload::Eddsa(hex) => {
+                if hex.len() < 64 || hex.len() > 2464 { 
+                    return Err("Eddsa payload must be between 64 and 2464 hex characters (32-1232 bytes)".to_string());
+                }
+                Ok(())
             }
         }
     }
@@ -103,7 +110,7 @@ impl From<SignRequest> for SignRequestArgs {
     fn from(legacy: SignRequest) -> Self {
         SignRequestArgs {
             path: legacy.path,
-            payload_v2: Payload::Ecdsa(legacy.payload),
+            payload_v2: Payload::from_legacy_ecdsa(legacy.payload),
             domain_id: legacy.key_version as u64,
         }
     }
