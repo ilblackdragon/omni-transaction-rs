@@ -1,25 +1,25 @@
-use std::{
-    fmt,
-    io::{BufRead, Write},
-};
+use alloc::format;
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{de::MapAccess, Deserialize, Deserializer, Serialize};
 
 use super::hash::Hash;
 use super::tx_id::Txid;
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 
 /// A reference to a transaction output.
 ///
 /// ### Bitcoin Core References
 ///
 /// * [COutPoint definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L26)
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
-)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq, Serialize, BorshSerialize, BorshDeserialize)]
 pub struct OutPoint {
     /// The referenced transaction's txid.
     pub txid: Txid,
@@ -58,7 +58,7 @@ impl Default for OutPoint {
 }
 
 impl Encodable for OutPoint {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         let mut len = 0;
         len += self.txid.encode(w)?;
         len += self.vout.encode(w)?;
@@ -67,7 +67,7 @@ impl Encodable for OutPoint {
 }
 
 impl Decodable for OutPoint {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let txid = Txid::decode(r)?;
         let vout = Decodable::decode(r)?;
         Ok(Self { txid, vout })
@@ -131,7 +131,6 @@ impl<'de> serde::de::Visitor<'de> for OutPointVisitor {
                     txid = Some(Txid(Hash(hash_bytes)));
                 }
                 "vout" => {
-                    println!("vout");
                     vout = Some(
                         map.next_value::<serde_json::Value>()
                             .and_then(|vout_value| match vout_value {

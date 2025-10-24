@@ -2,7 +2,7 @@
 macro_rules! encoder_fn {
     ($name:ident, $val_type:ty) => {
         #[inline]
-        fn $name(&mut self, v: $val_type) -> core::result::Result<(), std::io::Error> {
+        fn $name(&mut self, v: $val_type) -> core::result::Result<(), Error> {
             self.write_all(&v.to_le_bytes())
         }
     };
@@ -12,7 +12,7 @@ macro_rules! encoder_fn {
 macro_rules! decoder_fn {
     ($name:ident, $val_type:ty, $byte_len:expr) => {
         #[inline]
-        fn $name(&mut self) -> core::result::Result<$val_type, std::io::Error> {
+        fn $name(&mut self) -> core::result::Result<$val_type, Error> {
             let mut val = [0; $byte_len];
             self.read_exact(&mut val)?;
             Ok(<$val_type>::from_le_bytes(val))
@@ -24,7 +24,7 @@ macro_rules! decoder_fn {
 macro_rules! impl_array {
     ($len:expr) => {
         impl Encodable for [u8; $len] {
-            fn encode<W: Write + ?Sized>(&self, writer: &mut W) -> Result<usize, std::io::Error> {
+            fn encode<W: Write + ?Sized>(&self, writer: &mut W) -> Result<usize, Error> {
                 writer.write_all(self)?;
                 Ok($len)
             }
@@ -36,18 +36,13 @@ macro_rules! impl_array {
 macro_rules! impl_int_encodable {
     ($ty:ident, $meth_dec:ident, $meth_enc:ident) => {
         impl Encodable for $ty {
-            fn encode<W: Write + ?Sized>(
-                &self,
-                w: &mut W,
-            ) -> core::result::Result<usize, std::io::Error> {
+            fn encode<W: Write + ?Sized>(&self, w: &mut W) -> core::result::Result<usize, Error> {
                 w.$meth_enc(*self)?;
-                Ok(std::mem::size_of::<$ty>())
+                Ok(core::mem::size_of::<$ty>())
             }
         }
         impl Decodable for $ty {
-            fn decode<R: BufRead + ?Sized>(
-                r: &mut R,
-            ) -> core::result::Result<Self, std::io::Error> {
+            fn decode<R: BufRead + ?Sized>(r: &mut R) -> core::result::Result<Self, Error> {
                 ReadExt::$meth_dec(r)
             }
         }

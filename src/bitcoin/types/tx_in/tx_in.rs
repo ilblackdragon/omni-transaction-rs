@@ -1,9 +1,9 @@
-use std::io::{self, BufRead, Write};
-
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 use crate::bitcoin::types::script_buf::ScriptBuf;
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
@@ -17,17 +17,7 @@ use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
 /// ### Bitcoin Core References
 ///
 /// * [CTxIn definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L65)
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct TxIn {
     /// The reference to the previous output that is being used as an input.
     pub previous_output: OutPoint,
@@ -48,7 +38,7 @@ pub struct TxIn {
 }
 
 impl Encodable for TxIn {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         let mut len = 0;
         let previous_output_len = self.previous_output.encode(w)?;
         len += previous_output_len;
@@ -64,7 +54,7 @@ impl Encodable for TxIn {
 }
 
 impl Decodable for TxIn {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let previous_output = OutPoint::decode(r)?;
         let script_sig = ScriptBuf::decode(r)?;
         let sequence = Sequence::decode(r)?;
@@ -79,7 +69,10 @@ impl Decodable for TxIn {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::{TxIn, OutPoint, Sequence, Witness};
+    use crate::bitcoin::encoding::{Decodable, Encodable};
+    use crate::bitcoin::types::script_buf::ScriptBuf;
+    use alloc::vec::Vec;
 
     #[test]
     fn test_encode_decode() {

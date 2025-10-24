@@ -1,18 +1,21 @@
+extern crate alloc;
+use alloc::format;
+use alloc::string::String;
+use core::fmt;
+
+use borsh::{BorshDeserialize, BorshSerialize};
+use serde::Deserializer;
+use serde::{Deserialize, Serialize};
+
 use crate::bitcoin::{
-    encoding::{Decodable, Encodable},
+    encoding::{
+        io::{BufRead, Error, Write},
+        Decodable, Encodable,
+    },
     types::lock_time::constants::LOCK_TIME_THRESHOLD,
 };
 
 use super::{height::Height, time::Time};
-use std::{
-    fmt,
-    io::{BufRead, Write},
-};
-
-use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
-use serde::Deserializer;
-use serde::{Deserialize, Serialize};
 
 /// Locktime itself is an unsigned 4-byte integer which can be parsed two ways:
 ///
@@ -24,9 +27,7 @@ use serde::{Deserialize, Serialize};
 /// The transaction can be added to any block whose block time is greater than the locktime.
 ///
 /// [Bitcoin Devguide]: https://developer.bitcoin.org/devguide/transactions.html#locktime-and-sequence-number
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, BorshSerialize, BorshDeserialize)]
 pub struct LockTime(u32);
 
 impl LockTime {
@@ -63,13 +64,13 @@ impl LockTime {
 }
 
 impl Encodable for LockTime {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         self.0.encode(w)
     }
 }
 
 impl Decodable for LockTime {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         // 4 bytes
         let mut buf: [u8; 4] = [0; 4];
         r.read_exact(&mut buf)?;
@@ -138,7 +139,6 @@ impl<'de> Deserialize<'de> for LockTime {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bitcoin::types::Height;
 
     #[test]
     fn test_locktime_size() {

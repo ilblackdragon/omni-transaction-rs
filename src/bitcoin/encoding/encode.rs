@@ -1,8 +1,9 @@
-use std::io::{BufRead, Write};
+use alloc::vec::Vec;
 
 use super::{
     decode::Decodable,
     extensions::{ReadExt, WriteExt},
+    io::{BufRead, Error, Write},
     macros::{impl_array, impl_int_encodable},
     utils::encode_with_size,
 };
@@ -15,7 +16,7 @@ pub trait Encodable {
     ///
     /// The number of bytes written on success. The only errors returned are errors propagated from
     /// the writer.
-    fn encode<W: Write + ?Sized>(&self, writer: &mut W) -> Result<usize, std::io::Error>;
+    fn encode<W: Write + ?Sized>(&self, writer: &mut W) -> Result<usize, Error>;
 }
 
 // Encodable implementations for arrays
@@ -29,7 +30,7 @@ impl_int_encodable!(u64, read_u64, emit_u64);
 
 // Encodable implementation for `Vec<u8>`
 impl Encodable for Vec<u8> {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         encode_with_size(self, w)
     }
 }

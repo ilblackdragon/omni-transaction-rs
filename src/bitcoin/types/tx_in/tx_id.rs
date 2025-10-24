@@ -1,24 +1,16 @@
 use core::fmt;
-use std::io::{BufRead, Write};
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 
 use super::hash::Hash;
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(
-    Debug,
-    Copy,
-    Clone,
-    Eq,
-    PartialEq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
+    Debug, Copy, Clone, Eq, PartialEq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
 pub struct Txid(pub Hash);
 
@@ -39,13 +31,13 @@ impl Txid {
 }
 
 impl Encodable for Txid {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         self.0.encode(w)
     }
 }
 
 impl Decodable for Txid {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         Decodable::decode(r).map(Txid)
     }
 }
@@ -58,7 +50,9 @@ impl fmt::Display for Txid {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Txid;
+    use crate::bitcoin::encoding::{Decodable, Encodable};
+    use alloc::vec::Vec;
 
     #[test]
     fn test_encode_decode() {

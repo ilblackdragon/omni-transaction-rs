@@ -22,7 +22,7 @@
 //! ```rust
 //! use signet_rs::evm::utils::parse_eth_address;
 //! use signet_rs::{TransactionBuilder, TxBuilder, EVM};
-//! 
+//!
 //! let to_address_str = "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 //! let to_address = parse_eth_address(to_address_str);
 //! let max_gas_fee: u128 = 20_000_000_000;
@@ -52,11 +52,11 @@
 //!
 //! ```rust
 //! use signet_rs::bitcoin::types::{
-//!     Amount, Hash, LockTime, OutPoint, ScriptBuf, Sequence, TxIn, TxOut, Txid, Version, 
+//!     Amount, Hash, LockTime, OutPoint, ScriptBuf, Sequence, TxIn, TxOut, Txid, Version,
 //!     Witness, EcdsaSighashType
 //! };
 //! use signet_rs::{TransactionBuilder, TxBuilder, BITCOIN};
-//! 
+//!
 //! let txid_str = "2ece6cd71fee90ff613cee8f30a52c3ecc58685acf9b817b9c467b7ff199871c";
 //! let hash = Hash::from_hex(txid_str).unwrap();
 //! let txid = Txid(hash);
@@ -113,7 +113,8 @@
 //! omni-transaction = { version = "0.2.1", features = ["bitcoin"] }
 //! ```
 
-#![no_std]
+// Use no_std except during tests (which need std for test infrastructure)
+#![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
 

@@ -1,21 +1,22 @@
-use std::{
-    fmt,
-    io::{self, BufRead, Write},
-};
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::Deserializer;
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 
 /// The transaction version.
 ///
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize)]
 #[borsh(use_discriminant = true)]
 pub enum Version {
     /// The original Bitcoin transaction version (pre-BIP-68)
@@ -37,7 +38,7 @@ impl Version {
 }
 
 impl Encodable for Version {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         let bytes = (*self as i32).to_le_bytes();
         w.write_all(&bytes)?;
         Ok(bytes.len())
@@ -45,7 +46,7 @@ impl Encodable for Version {
 }
 
 impl Decodable for Version {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let mut buf = [0u8; 4];
         r.read_exact(&mut buf)?;
         let int = i32::from_le_bytes(buf);
@@ -53,10 +54,7 @@ impl Decodable for Version {
         match int {
             1 => Ok(Self::One),
             2 => Ok(Self::Two),
-            _ => Err(std::io::Error::new(
-                std::io::ErrorKind::InvalidData,
-                "Invalid version number",
-            )),
+            _ => Err(Error::InvalidData("Invalid version number")),
         }
     }
 }
@@ -144,7 +142,6 @@ impl fmt::Display for Version {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Cursor;
 
     #[test]
     fn test_version_serialization() {
@@ -163,8 +160,7 @@ mod tests {
     #[test]
     fn test_version_deserialization() {
         let data = vec![1, 0, 0, 0];
-        let mut cursor = Cursor::new(data);
-        let version = Version::decode(&mut cursor).unwrap();
+        let version = Version::decode(&mut data.as_slice()).unwrap();
 
         // Check that the deserialized version is correct
         assert_eq!(version, Version::One);
@@ -175,8 +171,7 @@ mod tests {
         let version = Version::Two;
         let mut buf = Vec::new();
         version.encode(&mut buf).unwrap();
-        let mut cursor = Cursor::new(buf);
-        let decoded_version = Version::decode(&mut cursor).unwrap();
+        let decoded_version = Version::decode(&mut buf.as_slice()).unwrap();
 
         // Check that the version is the same after encoding and decoding
         assert_eq!(version, decoded_version);

@@ -1,11 +1,16 @@
-use std::io::{BufRead, Write};
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::bitcoin::encoding::{
-    decode::MAX_VEC_SIZE, extensions::WriteExt, utils::VarInt, Decodable, Encodable,
+    decode::MAX_VEC_SIZE,
+    extensions::WriteExt,
+    io::{BufRead, Error, Write},
+    utils::VarInt,
+    Decodable, Encodable,
 };
 
 /// The Witness is the data used to unlock bitcoin since the [segwit upgrade].
@@ -18,7 +23,7 @@ use crate::bitcoin::encoding::{
 /// saving some allocations.
 ///
 /// [segwit upgrade]: <https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki>
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 pub struct Witness {
     /// Contains the witness `Vec<Vec<u8>>` serialization.
     ///
@@ -118,7 +123,7 @@ impl Witness {
 }
 
 impl Encodable for Witness {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         let len = VarInt::from(self.witness_elements);
         len.encode(w)?;
         let content_with_indices_len = self.content.len();
@@ -168,12 +173,12 @@ impl<'a> IntoIterator for &'a Witness {
 }
 
 impl Decodable for Witness {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let witness_elements = VarInt::decode(r)?.0 as usize;
         // Minimum size of witness element is 1 byte, so if the count is
         // greater than MAX_VEC_SIZE we must return an error.
         if witness_elements > MAX_VEC_SIZE {
-            return Err(std::io::Error::other("OversizedVectorAllocation"));
+            return Err(Error::OversizedVectorAllocation);
         }
         if witness_elements == 0 {
             Ok(Self::default())
@@ -193,11 +198,11 @@ impl Decodable for Witness {
                 let element_size = element_size_varint.0 as usize;
                 let required_len = cursor
                     .checked_add(element_size)
-                    .ok_or_else(|| std::io::Error::other("OversizedVectorAllocation"))?
+                    .ok_or(Error::OversizedVectorAllocation)?
                     .checked_add(element_size_varint_len)
-                    .ok_or_else(|| std::io::Error::other("OversizedVectorAllocation"))?;
+                    .ok_or(Error::OversizedVectorAllocation)?;
                 if required_len > MAX_VEC_SIZE + witness_index_space {
-                    return Err(std::io::Error::other("OversizedVectorAllocation"));
+                    return Err(Error::OversizedVectorAllocation);
                 }
 
                 // We will do content.rotate_left(witness_index_space) later.

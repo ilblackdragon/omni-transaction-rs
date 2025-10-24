@@ -1,29 +1,19 @@
-use std::{
-    io::{BufRead, Write},
-    ops,
-};
+use core::ops;
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 
 /// An amount.
 ///
 /// The [`Amount`] type can be used to express Bitcoin amounts that support
 /// arithmetic and conversion to various denominations.
 #[derive(
-    Debug,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
 pub struct Amount(u64);
 
@@ -83,13 +73,13 @@ impl Amount {
 }
 
 impl Encodable for Amount {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         self.0.encode(w)
     }
 }
 
 impl Decodable for Amount {
-    fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let value = Decodable::decode_from_finite_reader(r)?;
         Ok(Self::from_sat(value))
     }
@@ -113,7 +103,9 @@ impl ops::Sub for Amount {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Amount;
+    use crate::bitcoin::encoding::{Decodable, Encodable};
+    use alloc::vec::Vec;
 
     #[test]
     fn test_encode_decode() {

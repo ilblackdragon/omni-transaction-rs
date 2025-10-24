@@ -1,23 +1,14 @@
-use std::io::{BufRead, Write};
-
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::bitcoin::encoding::{Decodable, Encodable};
+use crate::bitcoin::encoding::{
+    io::{BufRead, Error, Write},
+    Decodable, Encodable,
+};
 
 /// Bitcoin transaction input sequence number.
 #[derive(
-    Debug,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
+    Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize,
 )]
 pub struct Sequence(pub u32);
 
@@ -59,20 +50,22 @@ impl Default for Sequence {
 }
 
 impl Encodable for Sequence {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         self.0.encode(w)
     }
 }
 
 impl Decodable for Sequence {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         Decodable::decode(r).map(Sequence)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::Sequence;
+    use crate::bitcoin::encoding::{Decodable, Encodable};
+    use alloc::vec::Vec;
 
     #[test]
     fn test_encode_decode() {

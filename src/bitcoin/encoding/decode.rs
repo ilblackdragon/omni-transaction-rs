@@ -1,7 +1,8 @@
-use super::utils::ToU64;
-use std::io::{BufRead, Read};
+use alloc::vec;
+use alloc::vec::Vec;
 
 use super::extensions::ReadExt;
+use super::io::{BufRead, Error, Read};
 use super::utils::VarInt;
 
 /// Maximum size, in bytes, of a vector we are allowed to decode.
@@ -9,15 +10,11 @@ pub const MAX_VEC_SIZE: usize = 4_000_000;
 
 /// Data which can be decoded in a bitcoin-consistent way.
 pub trait Decodable: Sized {
-    fn decode_from_finite_reader<R: BufRead + ?Sized>(
-        reader: &mut R,
-    ) -> Result<Self, std::io::Error> {
+    fn decode_from_finite_reader<R: BufRead + ?Sized>(reader: &mut R) -> Result<Self, Error> {
         Self::decode(reader)
     }
 
-    fn decode<R: BufRead + ?Sized>(reader: &mut R) -> Result<Self, std::io::Error> {
-        Self::decode_from_finite_reader(&mut reader.take(MAX_VEC_SIZE.to_u64()))
-    }
+    fn decode<R: BufRead + ?Sized>(reader: &mut R) -> Result<Self, Error>;
 }
 
 struct ReadBytesFromFiniteReaderOpts {
@@ -26,7 +23,7 @@ struct ReadBytesFromFiniteReaderOpts {
 }
 
 impl Decodable for Vec<u8> {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let len = VarInt::decode(r)?.0 as usize;
         // most real-world vec of bytes data, wouldn't be larger than 128KiB
         let opts = ReadBytesFromFiniteReaderOpts {
@@ -44,7 +41,7 @@ impl Decodable for Vec<u8> {
 fn read_bytes_from_finite_reader<D: Read + ?Sized>(
     d: &mut D,
     mut opts: ReadBytesFromFiniteReaderOpts,
-) -> Result<Vec<u8>, std::io::Error> {
+) -> Result<Vec<u8>, Error> {
     let mut ret = vec![];
 
     assert_ne!(opts.chunk_size, 0);

@@ -1,6 +1,7 @@
 pub mod decode;
 pub mod encode;
 pub mod extensions;
+pub mod io;
 pub mod macros;
 pub mod utils;
 

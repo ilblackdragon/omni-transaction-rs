@@ -1,12 +1,17 @@
+use alloc::string::{String, ToString};
+use alloc::vec;
+use alloc::vec::Vec;
 use core::fmt;
-use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 
-use crate::bitcoin::encoding::{encode::Encodable, Decodable};
+use crate::bitcoin::encoding::{
+    encode::Encodable,
+    io::{BufRead, Error, Write},
+    Decodable,
+};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize)]
 pub struct ScriptBuf(pub Vec<u8>);
 
 impl ScriptBuf {
@@ -47,13 +52,13 @@ impl FromHex for Vec<u8> {
 }
 
 impl Encodable for ScriptBuf {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         self.0.encode(w)
     }
 }
 
 impl Decodable for ScriptBuf {
-    fn decode_from_finite_reader<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         Ok(Self(Decodable::decode_from_finite_reader(r)?))
     }
 }
@@ -81,7 +86,6 @@ impl<'de> serde::Deserialize<'de> for ScriptBuf {
                 type Value = ScriptBuf;
 
                 fn expecting(&self, formatter: &mut Formatter) -> fmt::Result {
-                    println!("expecting");
                     formatter.write_str("a script hex")
                 }
 

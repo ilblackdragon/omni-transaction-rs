@@ -1,6 +1,9 @@
-use std::io::{BufRead, Write};
-
-use super::{extensions::WriteExt, macros::impl_to_u64, Decodable, Encodable, ReadExt};
+use super::{
+    extensions::WriteExt,
+    io::{BufRead, Error, Write},
+    macros::impl_to_u64,
+    Decodable, Encodable, ReadExt,
+};
 
 /// A conversion trait for unsigned integer types smaller than or equal to 64-bits.
 ///
@@ -35,7 +38,7 @@ impl VarInt {
     }
 }
 impl Encodable for VarInt {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, Error> {
         match self.0 {
             0..=0xFC => {
                 (self.0 as u8).encode(w)?;
@@ -76,13 +79,13 @@ macro_rules! impl_var_int_from {
 impl_var_int_from!(u8, u16, u32, u64, usize);
 
 impl Decodable for VarInt {
-    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, std::io::Error> {
+    fn decode<R: BufRead + ?Sized>(r: &mut R) -> Result<Self, Error> {
         let n = ReadExt::read_u8(r)?;
         match n {
             0xFF => {
                 let x = ReadExt::read_u64(r)?;
                 if x < 0x100000000 {
-                    Err(std::io::Error::other("NonMinimalVarInt"))
+                    Err(Error::NonMinimalVarInt)
                 } else {
                     Ok(Self::from(x))
                 }
@@ -90,7 +93,7 @@ impl Decodable for VarInt {
             0xFE => {
                 let x = ReadExt::read_u32(r)?;
                 if x < 0x10000 {
-                    Err(std::io::Error::other("NonMinimalVarInt"))
+                    Err(Error::NonMinimalVarInt)
                 } else {
                     Ok(Self::from(x))
                 }
@@ -98,7 +101,7 @@ impl Decodable for VarInt {
             0xFD => {
                 let x = ReadExt::read_u16(r)?;
                 if x < 0xFD {
-                    Err(std::io::Error::other("NonMinimalVarInt"))
+                    Err(Error::NonMinimalVarInt)
                 } else {
                     Ok(Self::from(x))
                 }
@@ -109,10 +112,7 @@ impl Decodable for VarInt {
 }
 
 // Global utility functions
-pub fn encode_with_size<W: Write + ?Sized>(
-    data: &[u8],
-    w: &mut W,
-) -> Result<usize, std::io::Error> {
+pub fn encode_with_size<W: Write + ?Sized>(data: &[u8], w: &mut W) -> Result<usize, Error> {
     let vi_len = VarInt(data.len().to_u64()).encode(w)?;
     w.emit_slice(data)?;
     Ok(vi_len + data.len())

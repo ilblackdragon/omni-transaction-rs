@@ -1,4 +1,8 @@
 //! Utility functions for serialization and encoding of Bitcoin data structures
+
+use alloc::vec;
+use alloc::vec::Vec;
+
 fn encode_signature_as_der(signature_bytes: &[u8]) -> Vec<u8> {
     assert_eq!(
         signature_bytes.len(),
@@ -99,7 +103,6 @@ mod tests {
             serialized_with_bitcoin_bytes
         );
     }
-
 
     // using the bitcoin crate
     pub fn create_signature(big_r_hex: &str, s_hex: &str) -> Result<Signature, secp256k1::Error> {

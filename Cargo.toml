@@ -20,9 +20,10 @@ panic = "abort"
 overflow-checks = true
 
 [features]
-default = ["evm"]  # Bitcoin disabled - requires std::io for encoding
-bitcoin = ["sha2", "borsh", "serde-big-array", "bs58"]  # Optional, not included by default
+default = ["evm", "bitcoin"]  # Both EVM and Bitcoin enabled by default (no_std compatible!)
+bitcoin = ["sha2", "borsh", "serde-big-array", "bs58"]
 evm = []
+std = ["schemars"]  # JsonSchema requires std
 
 [dependencies]
 rlp = { version = "0.6.1", default-features = false }
@@ -33,6 +34,7 @@ bs58 = { version = "0.5.1", default-features = false, features = ["alloc"], opti
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 sha2 = { version = "0.10.8", default-features = false, optional = true }
+schemars = { version = "0.8", default-features = false, features = ["derive"], optional = true }
 
 
 [dev-dependencies]

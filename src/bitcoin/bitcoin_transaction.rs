@@ -1,12 +1,17 @@
+use alloc::vec::Vec;
+
 use borsh::{BorshDeserialize, BorshSerialize};
-use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::io::{BufRead, Write};
 
 use super::{
     constants::{SEGWIT_FLAG, SEGWIT_MARKER},
-    encoding::{decode::MAX_VEC_SIZE, utils::VarInt, Decodable, Encodable, ToU64},
+    encoding::{
+        decode::MAX_VEC_SIZE,
+        io::{BufRead, Write},
+        utils::VarInt,
+        Decodable, Encodable, ToU64,
+    },
     types::{
         EcdsaSighashType, LockTime, ScriptBuf, TransactionType, TxIn, TxOut, Version, Witness,
     },
@@ -23,7 +28,7 @@ use super::{
 ///     Amount, Hash, LockTime, OutPoint, ScriptBuf, Sequence, TxIn, TxOut, Txid, Version, Witness
 /// };
 /// use signet_rs::bitcoin::BitcoinTransaction;
-/// 
+///
 /// // The first case would be as follows:
 /// let omni_tx = BitcoinTransaction {
 ///     version: Version::One,
@@ -69,17 +74,7 @@ use super::{
 /// "#;
 /// let tx = signet_rs::bitcoin::BitcoinTransaction::from_json(json_value).unwrap();
 ///
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, BorshSerialize, BorshDeserialize)]
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: Version,
@@ -272,7 +267,10 @@ impl BitcoinTransaction {
 }
 
 impl Encodable for Vec<TxIn> {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> core::result::Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(
+        &self,
+        w: &mut W,
+    ) -> core::result::Result<usize, super::encoding::io::Error> {
         let mut len = 0;
         len += VarInt(self.len().to_u64()).encode(w)?;
         for c in self.iter() {
@@ -283,9 +281,9 @@ impl Encodable for Vec<TxIn> {
 }
 
 impl Decodable for Vec<TxIn> {
-    fn decode_from_finite_reader<R: BufRead + ?Sized>(
+    fn decode<R: BufRead + ?Sized>(
         r: &mut R,
-    ) -> core::result::Result<Self, std::io::Error> {
+    ) -> core::result::Result<Self, super::encoding::io::Error> {
         let len = VarInt::decode_from_finite_reader(r)?.0;
         // Do not allocate upfront more items than if the sequence of type
         // occupied roughly quarter a block. This should never be the case
@@ -293,7 +291,7 @@ impl Decodable for Vec<TxIn> {
         // reallocate.
         // Note: OOM protection relies on reader eventually running out of
         // data to feed us.
-        let max_capacity = MAX_VEC_SIZE / 4 / std::mem::size_of::<Self>();
+        let max_capacity = MAX_VEC_SIZE / 4 / core::mem::size_of::<Self>();
         let mut ret = Self::with_capacity(core::cmp::min(len as usize, max_capacity));
         for _ in 0..len {
             ret.push(Decodable::decode_from_finite_reader(r)?);
@@ -303,7 +301,10 @@ impl Decodable for Vec<TxIn> {
 }
 
 impl Encodable for Vec<TxOut> {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> core::result::Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(
+        &self,
+        w: &mut W,
+    ) -> core::result::Result<usize, super::encoding::io::Error> {
         let mut len = 0;
         len += VarInt(self.len().to_u64()).encode(w)?;
         for c in self.iter() {
@@ -314,9 +315,9 @@ impl Encodable for Vec<TxOut> {
 }
 
 impl Decodable for Vec<TxOut> {
-    fn decode_from_finite_reader<R: BufRead + ?Sized>(
+    fn decode<R: BufRead + ?Sized>(
         r: &mut R,
-    ) -> core::result::Result<Self, std::io::Error> {
+    ) -> core::result::Result<Self, super::encoding::io::Error> {
         let len = VarInt::decode_from_finite_reader(r)?.0;
         // Do not allocate upfront more items than if the sequence of type
         // occupied roughly quarter a block. This should never be the case
@@ -324,7 +325,7 @@ impl Decodable for Vec<TxOut> {
         // reallocate.
         // Note: OOM protection relies on reader eventually running out of
         // data to feed us.
-        let max_capacity = MAX_VEC_SIZE / 4 / std::mem::size_of::<Vec<TxIn>>();
+        let max_capacity = MAX_VEC_SIZE / 4 / core::mem::size_of::<Vec<TxIn>>();
         let mut ret = Self::with_capacity(core::cmp::min(len as usize, max_capacity));
         for _ in 0..len {
             ret.push(Decodable::decode_from_finite_reader(r)?);
@@ -334,7 +335,7 @@ impl Decodable for Vec<TxOut> {
 }
 
 impl Encodable for BitcoinTransaction {
-    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, std::io::Error> {
+    fn encode<W: Write + ?Sized>(&self, w: &mut W) -> Result<usize, super::encoding::io::Error> {
         let mut len = 0;
         len += self.version.encode(w)?;
 
