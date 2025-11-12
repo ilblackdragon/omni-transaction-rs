@@ -1,6 +1,6 @@
 use crate::near::{
     types::{BlockHash, PublicKey, Signature},
-    utils::base64_serialization,
+    utils::base64_serialization::Base64,
 };
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::serde::{Deserialize, Serialize};
@@ -52,8 +52,7 @@ pub enum Action {
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployGlobalContractAction {
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String")]
+    #[serde(with = "Base64")]
     pub code: Vec<u8>,
     pub deploy_mode: GlobalContractDeployMode,
 }
@@ -141,8 +140,7 @@ pub struct CreateAccountAction {}
 )]
 #[serde(crate = "near_sdk::serde")]
 pub struct DeployContractAction {
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String")]
+    #[serde(with = "Base64")]
     pub code: Vec<u8>,
 }
 
@@ -160,8 +158,7 @@ pub struct DeployContractAction {
 #[serde(crate = "near_sdk::serde")]
 pub struct FunctionCallAction {
     pub method_name: String,
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String")]
+    #[serde(with = "Base64")]
     pub args: Vec<u8>,
     pub gas: U64,
     pub deposit: U128,
