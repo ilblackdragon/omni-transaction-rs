@@ -48,10 +48,10 @@ alloy-rlp = { version = "0.3.8", features = ["derive"] }
 alloy-primitives = { version = "0.8.3" }
 
 # near
-near-primitives = { version = "0.30" }
-near-crypto = { version = "0.30" }
-near-jsonrpc-client = { version = "0.17.0", features = ["any"] }
-near-workspaces = { version = "0.20", features = ["experimental", "unstable"] }
+near-primitives = { version = "0.33" }
+near-crypto = { version = "0.33" }
+near-jsonrpc-client = { version = "0.19.0", features = ["any"] }
+near-workspaces = { version = "0.21", features = ["experimental", "unstable"] }
 
 # bitcoin
 bitcoin = { version = "0.32.0", default-features = false, features = [
