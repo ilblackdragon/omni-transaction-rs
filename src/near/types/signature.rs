@@ -2,7 +2,7 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use bs58;
 use schemars::JsonSchema;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::fmt::Debug;
+use std::{borrow::Cow, fmt::Debug};
 
 use crate::constants::{COMPONENT_SIZE, SECP256K1_SIGNATURE_LENGTH};
 
@@ -26,11 +26,11 @@ pub type ComponentBytes = [u8; COMPONENT_SIZE];
 pub struct Secp256K1Signature(pub [u8; SECP256K1_SIGNATURE_LENGTH]);
 
 impl JsonSchema for Secp256K1Signature {
-    fn schema_name() -> String {
-        "Secp256K1Signature".to_owned()
+    fn schema_name() -> Cow<'static, str> {
+        "Secp256K1Signature".into()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(gen: &mut schemars::generate::SchemaGenerator) -> schemars::Schema {
         <String>::json_schema(gen)
     }
 }

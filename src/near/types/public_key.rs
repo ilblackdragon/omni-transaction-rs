@@ -5,6 +5,7 @@ use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
 use serde::de::{self};
 use serde::ser::{SerializeTuple, Serializer};
+use std::borrow::Cow;
 use std::io::{Error, Write};
 
 #[derive(BorshDeserialize, PartialEq, Eq, Debug, Clone)]
@@ -222,11 +223,11 @@ impl<'de> Deserialize<'de> for Secp256K1PublicKey {
 }
 
 impl JsonSchema for Secp256K1PublicKey {
-    fn schema_name() -> String {
-        "Secp256K1PublicKey".to_owned()
+    fn schema_name() -> Cow<'static, str> {
+        "Secp256K1PublicKey".into()
     }
 
-    fn json_schema(gen: &mut schemars::gen::SchemaGenerator) -> schemars::schema::Schema {
+    fn json_schema(gen: &mut schemars::generate::SchemaGenerator) -> schemars::Schema {
         <Vec<u8>>::json_schema(gen)
     }
 }
