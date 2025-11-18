@@ -72,8 +72,6 @@ k256 = { version = "0.13.1", features = [
 # async
 tokio = { version = "1.38", features = ["full"] }
 
-openssl = { version = "0.10.56", features = ["vendored"] }
-
 # misc
 eyre = "0.6"
 
