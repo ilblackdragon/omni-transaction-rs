@@ -74,8 +74,11 @@ pub fn serialize_ecdsa_signature_from_str(big_r: &str, s: &str) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use bitcoin::script::Builder;
     use bitcoin::secp256k1::ecdsa::Signature;
     use bitcoin::secp256k1::{self};
+    use k256::elliptic_curve::sec1::ToEncodedPoint;
+    use omni_testing_utilities::address::{self, DerivedAddress};
 
     #[test]
     fn test_create_signature() {
@@ -102,6 +105,11 @@ mod tests {
 
     #[test]
     fn test_script_sig() {
+        const PATH: &str = "bitcoin-1";
+
+        let derived_address =
+            address::get_derived_address(&"omnitester.testnet".parse().unwrap(), PATH);
+
         let big_r = "03B96BFA3DA6BB4BB74EEEE9C20970725C5782F07724CD1BEFBD265C5AD5C63948";
         let s = "49283B618968DEFB0E660EA703D193BC1D213F5DD811A2D13307FCA01E20C5C0";
 
@@ -112,26 +120,25 @@ mod tests {
             sighash_type: bitcoin::EcdsaSighashType::All,
         };
 
-        // Create a test public key directly using bitcoin library
-        // This is a valid secp256k1 public key in uncompressed format
-        let test_pubkey_hex = "04678afdb0fe5548271967f1a67130b7105cd6a828e03909a67962e0ea1f61deb649f6bc3f4cef38c4f35504e51ec112de5c384df7ba0b8d578a4c702b6bf11d5f";
-        let test_pubkey_bytes = hex::decode(test_pubkey_hex).unwrap();
-        let secp_pubkey = bitcoin::secp256k1::PublicKey::from_slice(&test_pubkey_bytes)
-            .expect("Invalid public key");
-
-        let result = build_script_sig_as_bytes(&secp_pubkey, signature);
+        let result = build_script_sig_as_bytes(&derived_address, signature);
 
         // Serialize the signature using the custom function
         let serialized_with_custom_function = serialize_ecdsa_signature_from_str(big_r, s);
 
-        let compressed_key = get_uncompressed_bitcoin_pubkey(&secp_pubkey);
+        let compressed_key = get_uncompressed_bitcoin_pubkey(&derived_address);
 
         let result2 = build_script_sig(&serialized_with_custom_function, compressed_key.as_slice());
 
         assert_eq!(result, result2);
     }
 
-    pub fn get_uncompressed_bitcoin_pubkey(secp_pubkey: &bitcoin::secp256k1::PublicKey) -> Vec<u8> {
+    pub fn get_uncompressed_bitcoin_pubkey(derived_address: &DerivedAddress) -> Vec<u8> {
+        let derived_public_key_bytes = derived_address.public_key.to_encoded_point(false); // no comprimida
+        let derived_public_key_bytes_array = derived_public_key_bytes.as_bytes();
+
+        let secp_pubkey = bitcoin::secp256k1::PublicKey::from_slice(derived_public_key_bytes_array)
+            .expect("Invalid public key");
+
         secp_pubkey.serialize_uncompressed().to_vec()
     }
 
@@ -161,12 +168,16 @@ mod tests {
     }
 
     pub fn build_script_sig_as_bytes(
-        secp_pubkey: &bitcoin::secp256k1::PublicKey,
+        derived_address: &DerivedAddress,
         signature: bitcoin::ecdsa::Signature,
     ) -> Vec<u8> {
-        use bitcoin::script::Builder;
+        // Create the public key from the derived address
+        let derived_public_key_bytes = derived_address.public_key.to_encoded_point(false); // Ensure this method exists
+        let derived_public_key_bytes_array = derived_public_key_bytes.as_bytes();
+        let secp_pubkey = bitcoin::secp256k1::PublicKey::from_slice(derived_public_key_bytes_array)
+            .expect("Invalid public key");
 
-        let bitcoin_pubkey = bitcoin::PublicKey::new_uncompressed(*secp_pubkey);
+        let bitcoin_pubkey = bitcoin::PublicKey::new_uncompressed(secp_pubkey);
 
         let script_sig_new = Builder::new()
             .push_slice(signature.serialize())
