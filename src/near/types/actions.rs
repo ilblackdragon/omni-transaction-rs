@@ -20,7 +20,6 @@ use super::{U128, U64};
     Eq,
     JsonSchema,
 )]
-
 pub enum Action {
     /// Create an (sub)account using a transaction `receiver_id` as an ID for
     /// a new account ID must pass validation rules described here
@@ -50,7 +49,6 @@ pub enum Action {
     Eq,
     JsonSchema,
 )]
-
 pub struct DeployGlobalContractAction {
     #[serde(with = "base64_serialization")]
     #[schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte"))]
@@ -69,7 +67,6 @@ pub struct DeployGlobalContractAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct UseGlobalContractAction {
     pub contract_identifier: GlobalContractIdentifier,
 }
@@ -85,7 +82,6 @@ pub struct UseGlobalContractAction {
     Eq,
     JsonSchema,
 )]
-
 pub enum GlobalContractDeployMode {
     /// Contract is deployed under its code hash.
     /// Users will be able reference it by that hash.
@@ -108,7 +104,6 @@ pub enum GlobalContractDeployMode {
     Eq,
     JsonSchema,
 )]
-
 pub enum GlobalContractIdentifier {
     CodeHash(BlockHash),
     AccountId(AccountId),
@@ -125,7 +120,6 @@ pub enum GlobalContractIdentifier {
     Eq,
     JsonSchema,
 )]
-
 pub struct CreateAccountAction {}
 
 #[derive(
@@ -139,7 +133,6 @@ pub struct CreateAccountAction {}
     Eq,
     JsonSchema,
 )]
-
 pub struct DeployContractAction {
     #[serde(with = "base64_serialization")]
     #[schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte"))]
@@ -157,7 +150,6 @@ pub struct DeployContractAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct FunctionCallAction {
     pub method_name: String,
     #[serde(with = "base64_serialization")]
@@ -178,7 +170,6 @@ pub struct FunctionCallAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct TransferAction {
     pub deposit: U128,
 }
@@ -194,7 +185,6 @@ pub struct TransferAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct StakeAction {
     /// Amount of tokens to stake.
     pub stake: U128,
@@ -213,7 +203,6 @@ pub struct StakeAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct AddKeyAction {
     /// A public key which will be associated with an access_key
     pub public_key: PublicKey,
@@ -232,7 +221,6 @@ pub struct AddKeyAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct AccessKey {
     /// Nonce for this access key, used for tx nonce generation. When access key is created, nonce
     /// is set to `(block_height - 1) * 1e6` to avoid tx hash collision on access key re-creation.
@@ -253,7 +241,6 @@ pub struct AccessKey {
     Eq,
     JsonSchema,
 )]
-
 pub enum AccessKeyPermission {
     FunctionCall(FunctionCallPermission),
     /// Grants full access to the account.
@@ -272,7 +259,6 @@ pub enum AccessKeyPermission {
     Eq,
     JsonSchema,
 )]
-
 pub struct FunctionCallPermission {
     pub allowance: Option<U128>,
     pub receiver_id: String,
@@ -290,7 +276,6 @@ pub struct FunctionCallPermission {
     Eq,
     JsonSchema,
 )]
-
 pub struct DeleteKeyAction {
     /// A public key associated with the access_key to be deleted.
     pub public_key: PublicKey,
@@ -307,7 +292,6 @@ pub struct DeleteKeyAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct DeleteAccountAction {
     pub beneficiary_id: AccountId,
 }
@@ -323,7 +307,6 @@ pub struct DeleteAccountAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct NonDelegateAction(Action);
 
 impl TryFrom<Action> for NonDelegateAction {
@@ -347,7 +330,6 @@ impl TryFrom<Action> for NonDelegateAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct DelegateAction {
     pub sender_id: AccountId,
     pub receiver_id: AccountId,
@@ -368,7 +350,6 @@ pub struct DelegateAction {
     Eq,
     JsonSchema,
 )]
-
 pub struct SignedDelegateAction {
     pub delegate_action: DelegateAction,
     pub signature: Signature,

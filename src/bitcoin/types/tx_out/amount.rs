@@ -25,7 +25,6 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct Amount(u64);
 
 impl Amount {

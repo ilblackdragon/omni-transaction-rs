@@ -12,11 +12,9 @@ use std::io::{Error, Write};
 pub struct Secp256K1PublicKey(pub [u8; SECP256K1_PUBLIC_KEY_LENGTH]);
 
 #[derive(Serialize, Deserialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
 #[derive(PartialEq, Eq, Debug, Clone, JsonSchema)]
-
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
     ED25519(ED25519PublicKey),

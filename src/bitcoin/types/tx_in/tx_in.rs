@@ -28,7 +28,6 @@ use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct TxIn {
     /// The reference to the previous output that is being used as an input.
     pub previous_output: OutPoint,

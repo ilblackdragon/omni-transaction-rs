@@ -33,7 +33,6 @@ use super::amount::Amount;
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct TxOut {
     /// The value of the output, in satoshis.
     pub value: Amount,

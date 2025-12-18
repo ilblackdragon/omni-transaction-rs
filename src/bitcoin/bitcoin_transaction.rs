@@ -75,7 +75,6 @@ use super::{
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: Version,

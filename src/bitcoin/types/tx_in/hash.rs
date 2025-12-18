@@ -19,7 +19,6 @@ use crate::bitcoin::encoding::{encode::Encodable, extensions::WriteExt, Decodabl
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct Hash(pub [u8; 32]);
 
 impl Hash {

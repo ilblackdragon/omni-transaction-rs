@@ -20,7 +20,6 @@ use serde::{Deserialize, Serialize};
     BorshDeserialize,
     JsonSchema,
 )]
-
 pub struct Txid(pub Hash);
 
 impl Txid {

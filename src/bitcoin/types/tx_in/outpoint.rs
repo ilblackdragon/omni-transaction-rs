@@ -20,7 +20,6 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 #[derive(
     Debug, Copy, Clone, Eq, PartialEq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
 )]
-
 pub struct OutPoint {
     /// The referenced transaction's txid.
     pub txid: Txid,

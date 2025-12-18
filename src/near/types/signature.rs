@@ -7,7 +7,6 @@ use std::{borrow::Cow, fmt::Debug};
 use crate::constants::{COMPONENT_SIZE, SECP256K1_SIGNATURE_LENGTH};
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
-
 pub enum Signature {
     ED25519(ED25519Signature),
     SECP256K1(Secp256K1Signature),
