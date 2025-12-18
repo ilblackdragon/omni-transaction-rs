@@ -22,6 +22,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// * [COutPoint definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L26)
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(all(feature = "serde", not(feature = "serde_json")), derive(Deserialize))]
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct OutPoint {

@@ -3,8 +3,11 @@ use std::{
     ops,
 };
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
@@ -13,18 +16,10 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 ///
 /// The [`Amount`] type can be used to express Bitcoin amounts that support
 /// arithmetic and conversion to various denominations.
-#[derive(
-    Debug,
-    Copy,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
-)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct Amount(u64);
 
 impl Amount {
