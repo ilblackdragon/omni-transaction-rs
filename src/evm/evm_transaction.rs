@@ -2,11 +2,10 @@
 use super::types::{AccessList, Address, Signature};
 use super::utils::parse_eth_address;
 use crate::constants::EIP_1559_TYPE;
-use near_sdk::serde::{Deserialize, Serialize};
 use rlp::RlpStream;
 use schemars::JsonSchema;
 use serde::de::{Error as DeError, Visitor};
-use serde::Deserializer;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 
 ///
@@ -35,7 +34,6 @@ use std::fmt;
 /// ```
 ///
 #[derive(Debug, Serialize, Deserialize, JsonSchema, Clone)]
-#[serde(crate = "near_sdk::serde")]
 pub struct EVMTransaction {
     #[serde(deserialize_with = "deserialize_u64")]
     pub chain_id: u64,
@@ -121,8 +119,8 @@ impl EVMTransaction {
         }
     }
 
-    pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
-        let v: near_sdk::serde_json::Value = near_sdk::serde_json::from_str(json)?;
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        let v: serde_json::Value = serde_json::from_str(json)?;
 
         let to = v["to"].as_str().unwrap_or_default().to_string();
 

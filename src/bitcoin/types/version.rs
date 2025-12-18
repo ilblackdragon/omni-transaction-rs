@@ -4,9 +4,9 @@ use std::{
 };
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
 use serde::Deserializer;
+use serde::{Deserialize, Serialize};
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
 

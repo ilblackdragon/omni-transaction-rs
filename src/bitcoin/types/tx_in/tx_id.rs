@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct Txid(pub Hash);
 
 impl Txid {

@@ -3,8 +3,8 @@ use std::io::{self, BufRead, Write};
 use crate::bitcoin::encoding::{Decodable, Encodable};
 use crate::bitcoin::types::script_buf::ScriptBuf;
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
 
@@ -28,7 +28,7 @@ use super::{outpoint::OutPoint, sequence::Sequence, witness::Witness};
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct TxIn {
     /// The reference to the previous output that is being used as an input.
     pub previous_output: OutPoint,

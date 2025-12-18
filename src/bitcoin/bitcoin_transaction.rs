@@ -1,6 +1,6 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Serialize};
 use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
 
@@ -75,7 +75,7 @@ use super::{
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: Version,
@@ -261,8 +261,8 @@ impl BitcoinTransaction {
     }
 
     /// Serialise a JSON representation of the transaction into a BitcoinTransaction struct
-    pub fn from_json(json: &str) -> Result<Self, near_sdk::serde_json::Error> {
-        let tx: Self = near_sdk::serde_json::from_str(json)?;
+    pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
+        let tx: Self = serde_json::from_str(json)?;
         Ok(tx)
     }
 }

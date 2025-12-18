@@ -1,8 +1,8 @@
 use std::io::{BufRead, Write};
 
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize, Serializer};
 use schemars::JsonSchema;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::bitcoin::encoding::{
     decode::MAX_VEC_SIZE, extensions::WriteExt, utils::VarInt, Decodable, Encodable,

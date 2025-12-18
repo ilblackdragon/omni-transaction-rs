@@ -19,7 +19,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct Sequence(pub u32);
 
 impl Sequence {

@@ -1,10 +1,9 @@
+use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use eyre::Result;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::methods::tx::{RpcTransactionError, TransactionInfo};
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_primitives::hash::CryptoHash;
-use near_sdk::base64::prelude::BASE64_STANDARD;
-use near_sdk::base64::Engine;
 use near_workspaces::sandbox;
 use omni_transaction::near::types::{
     Action, ED25519Signature, Signature as OmniSignature, TransferAction,

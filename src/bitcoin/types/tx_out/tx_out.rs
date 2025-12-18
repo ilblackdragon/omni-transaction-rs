@@ -33,7 +33,7 @@ use super::amount::Amount;
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct TxOut {
     /// The value of the output, in satoshis.
     pub value: Amount,

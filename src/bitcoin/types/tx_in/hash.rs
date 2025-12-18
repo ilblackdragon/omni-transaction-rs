@@ -19,7 +19,7 @@ use crate::bitcoin::encoding::{encode::Encodable, extensions::WriteExt, Decodabl
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct Hash(pub [u8; 32]);
 
 impl Hash {

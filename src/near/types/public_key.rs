@@ -1,10 +1,10 @@
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
 use crate::near::utils::PublicKeyStrExt;
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
 use serde::de::{self};
 use serde::ser::{SerializeTuple, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
 use std::io::{Error, Write};
 
@@ -12,11 +12,11 @@ use std::io::{Error, Write};
 pub struct Secp256K1PublicKey(pub [u8; SECP256K1_PUBLIC_KEY_LENGTH]);
 
 #[derive(Serialize, Deserialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
 #[derive(PartialEq, Eq, Debug, Clone, JsonSchema)]
-#[serde(crate = "near_sdk::serde")]
+
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
     ED25519(ED25519PublicKey),
@@ -236,7 +236,7 @@ impl JsonSchema for Secp256K1PublicKey {
 mod tests {
     use super::*;
     use borsh;
-    use near_sdk::serde_json;
+    use serde_json;
 
     #[test]
     fn test_compare_serde_json_with_near_primitives() {

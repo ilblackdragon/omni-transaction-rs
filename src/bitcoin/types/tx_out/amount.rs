@@ -25,7 +25,7 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
     BorshDeserialize,
     JsonSchema,
 )]
-#[serde(crate = "near_sdk::serde")]
+
 pub struct Amount(u64);
 
 impl Amount {

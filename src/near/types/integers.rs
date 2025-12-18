@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
 use serde::Serializer;
+use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema, Serialize)]

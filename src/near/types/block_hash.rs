@@ -1,7 +1,7 @@
 use borsh::{BorshDeserialize, BorshSerialize};
-use near_sdk::serde::{Deserialize, Deserializer, Serialize};
 use schemars::JsonSchema;
 use serde::{de, Serializer};
+use serde::{Deserialize, Deserializer, Serialize};
 
 #[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
 pub struct BlockHash(pub [u8; 32]);
@@ -69,7 +69,7 @@ impl<'de> Deserialize<'de> for BlockHash {
 mod tests {
     use super::*;
     use borsh::BorshDeserialize;
-    use near_sdk::serde_json;
+    use serde_json;
 
     #[test]
     fn test_compare_serde_json_with_near_primitives() {
