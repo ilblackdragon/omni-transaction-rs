@@ -74,6 +74,3 @@ tokio = { version = "1.38", features = ["full"] }
 
 # misc
 eyre = "0.6"
-
-# testing
-omni-testing-utilities = { git = "https://github.com/Omni-rs/omni-testing-utilities", branch = "main" }
