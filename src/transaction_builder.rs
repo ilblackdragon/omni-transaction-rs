@@ -39,6 +39,7 @@ mod tests {
     use near_crypto::PublicKey;
     use near_primitives::{
         action::Action, action::TransferAction, hash::CryptoHash, transaction::TransactionV0,
+        types::Balance,
     };
 
     #[test]
@@ -50,7 +51,9 @@ mod tests {
         let block_hash = BlockHash([0u8; 32]);
         let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: U128(1) });
         let omni_actions = vec![transfer_action];
-        let actions = Action::Transfer(TransferAction { deposit: 1u128 });
+        let actions = Action::Transfer(TransferAction {
+            deposit: Balance::from_yoctonear(1),
+        });
 
         let omni_near_transaction = OmniTransactionBuilder::new::<NEAR>()
             .signer_id(signer_id.to_string())

@@ -1,4 +1,5 @@
-use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
+use base64::prelude::BASE64_STANDARD;
+use base64::Engine;
 use eyre::Result;
 use near_crypto::InMemorySigner;
 use near_jsonrpc_client::methods::tx::{RpcTransactionError, TransactionInfo};

@@ -360,6 +360,7 @@ mod tests {
     use super::*;
     use crate::constants::ED25519_PUBLIC_KEY_LENGTH;
     use crate::near::types::public_key::ED25519PublicKey;
+    use near_primitives::types::{Balance, Gas};
     use serde_json;
 
     use near_primitives::action::{
@@ -399,8 +400,8 @@ mod tests {
                 NearPrimitiveAction::FunctionCall(Box::new(NearPrimitiveFunctionCallAction {
                     method_name: "test".to_string(),
                     args: vec![4, 5, 6],
-                    gas: 1000000,
-                    deposit: 0,
+                    gas: Gas::from_gas(1000000),
+                    deposit: Balance::ZERO,
                 })),
             ),
             (
@@ -408,7 +409,7 @@ mod tests {
                     deposit: U128(1000000000),
                 }),
                 NearPrimitiveAction::Transfer(NearPrimitiveTransferAction {
-                    deposit: 1000000000,
+                    deposit: Balance::from_yoctonear(1000000000),
                 }),
             ),
             (
@@ -419,7 +420,7 @@ mod tests {
                     )),
                 })),
                 NearPrimitiveAction::Stake(Box::new(NearPrimitiveStakeAction {
-                    stake: 100000000,
+                    stake: Balance::from_yoctonear(100000000),
                     public_key: near_crypto::PublicKey::ED25519(near_crypto::ED25519PublicKey(
                         [0; ED25519_PUBLIC_KEY_LENGTH],
                     )),

@@ -104,6 +104,8 @@ mod tests {
         hash::CryptoHash,
         transaction::Transaction as NearPrimitiveTransaction,
         transaction::TransactionV0,
+        types::Balance,
+        types::Gas,
     };
 
     #[derive(Debug)]
@@ -157,8 +159,8 @@ mod tests {
                 near_primitive_actions: vec![Action::FunctionCall(Box::new(FunctionCallAction {
                     method_name: "function1".to_string(),
                     args: vec![0x01, 0x02, 0x03],
-                    gas: 100,
-                    deposit: 1u128,
+                    gas: Gas::from_gas(100),
+                    deposit: Balance::from_yoctonear(1),
                 }))],
                 omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
                     method_name: "function1".to_string(),
@@ -174,7 +176,7 @@ mod tests {
                 nonce: 1,
                 receiver_id: "bob.near",
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
-                near_primitive_actions: vec![Action::Transfer(TransferAction { deposit: 1u128 })],
+                near_primitive_actions: vec![Action::Transfer(TransferAction { deposit: Balance::from_yoctonear(1) })],
                 omni_actions: vec![OmniAction::Transfer(OmniTransferAction {
                     deposit: U128(1),
                 })],
@@ -187,7 +189,7 @@ mod tests {
                 receiver_id: "bob.near",
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
                 near_primitive_actions: vec![Action::Stake(Box::new(StakeAction {
-                    stake: 1u128,
+                    stake: Balance::from_yoctonear(1),
                     public_key: PublicKey::ED25519(ED25519PublicKey(
                         "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                             .try_ed25519_into_bytes()
@@ -335,7 +337,7 @@ mod tests {
                 receiver_id: "forgetful-parent.testnet",
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
                 near_primitive_actions: vec![
-                    Action::Transfer(TransferAction { deposit: 1u128 }),
+                    Action::Transfer(TransferAction { deposit: Balance::from_yoctonear(1) }),
                     Action::AddKey(Box::new(AddKeyAction {
                         public_key: PublicKey::ED25519(ED25519PublicKey(
                             "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
