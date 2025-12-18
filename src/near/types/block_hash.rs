@@ -1,9 +1,15 @@
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{de, Serializer};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize};
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct BlockHash(pub [u8; 32]);
 
 impl From<[u8; 32]> for BlockHash {
@@ -12,6 +18,7 @@ impl From<[u8; 32]> for BlockHash {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for BlockHash {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -21,6 +28,7 @@ impl Serialize for BlockHash {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for BlockHash {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -65,7 +73,7 @@ impl<'de> Deserialize<'de> for BlockHash {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "borsh", feature = "serde", feature = "serde_json"))]
 mod tests {
     use super::*;
     use borsh::BorshDeserialize;

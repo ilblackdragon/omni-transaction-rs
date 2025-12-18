@@ -1,7 +1,10 @@
 use std::io::{BufRead, Write};
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::bitcoin::encoding::{
@@ -18,7 +21,9 @@ use crate::bitcoin::encoding::{
 /// saving some allocations.
 ///
 /// [segwit upgrade]: <https://github.com/bitcoin/bips/blob/master/bip-0143.mediawiki>
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct Witness {
     /// Contains the witness `Vec<Vec<u8>>` serialization.
     ///
@@ -253,6 +258,7 @@ fn resize_if_needed(vec: &mut Vec<u8>, required_len: usize) {
 
 pub struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
 
+#[cfg(feature = "serde")]
 impl Serialize for SerializeBytesAsHex<'_> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -265,6 +271,7 @@ impl Serialize for SerializeBytesAsHex<'_> {
 }
 
 // Serde keep backward compatibility with old Vec<Vec<u8>> format
+#[cfg(feature = "serde")]
 impl Serialize for Witness {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -287,6 +294,7 @@ impl Serialize for Witness {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Witness {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

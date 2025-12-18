@@ -1,18 +1,25 @@
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
 use bs58;
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{borrow::Cow, fmt::Debug};
 
 use crate::constants::{COMPONENT_SIZE, SECP256K1_SIGNATURE_LENGTH};
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum Signature {
     ED25519(ED25519Signature),
     SECP256K1(Secp256K1Signature),
 }
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct ED25519Signature {
     pub r: ComponentBytes,
     pub s: ComponentBytes,
@@ -21,9 +28,11 @@ pub struct ED25519Signature {
 /// Size of an `R` or `s` component of an Ed25519 signature when serialized as bytes.
 pub type ComponentBytes = [u8; COMPONENT_SIZE];
 
-#[derive(Debug, Clone, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 pub struct Secp256K1Signature(pub [u8; SECP256K1_SIGNATURE_LENGTH]);
 
+#[cfg(feature = "schemars")]
 impl JsonSchema for Secp256K1Signature {
     fn schema_name() -> Cow<'static, str> {
         "Secp256K1Signature".into()
@@ -34,6 +43,7 @@ impl JsonSchema for Secp256K1Signature {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for Signature {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -56,6 +66,7 @@ impl Serialize for Signature {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Signature {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

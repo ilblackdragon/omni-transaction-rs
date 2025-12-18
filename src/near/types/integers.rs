@@ -1,13 +1,22 @@
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::Serializer;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
+#[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct U64(pub u64);
 
-#[derive(Debug, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct U128(pub u128);
 
 impl From<u64> for U64 {
@@ -22,6 +31,7 @@ impl From<u128> for U128 {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for U128 {
     fn serialize<S>(&self, serializer: S) -> Result<<S as Serializer>::Ok, <S as Serializer>::Error>
     where
@@ -31,6 +41,7 @@ impl Serialize for U128 {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for U64 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -67,6 +78,7 @@ impl<'de> Deserialize<'de> for U64 {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for U128 {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -110,7 +122,7 @@ impl<'de> Deserialize<'de> for U128 {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "borsh", feature = "serde", feature = "serde_json"))]
 mod tests {
     use super::*;
     use borsh::BorshDeserialize;

@@ -1,20 +1,31 @@
 use crate::constants::{ED25519_PUBLIC_KEY_LENGTH, SECP256K1_PUBLIC_KEY_LENGTH};
 use crate::near::utils::PublicKeyStrExt;
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::de::{self};
+#[cfg(feature = "serde")]
 use serde::ser::{SerializeTuple, Serializer};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize};
 use std::borrow::Cow;
+#[cfg(feature = "borsh")]
 use std::io::{Error, Write};
 
-#[derive(BorshDeserialize, PartialEq, Eq, Debug, Clone)]
+#[derive(PartialEq, Eq, Debug, Clone)]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
 pub struct Secp256K1PublicKey(pub [u8; SECP256K1_PUBLIC_KEY_LENGTH]);
 
-#[derive(Serialize, Deserialize, BorshDeserialize, PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[derive(PartialEq, Eq, Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct ED25519PublicKey(pub [u8; ED25519_PUBLIC_KEY_LENGTH]);
 
-#[derive(PartialEq, Eq, Debug, Clone, JsonSchema)]
+#[derive(PartialEq, Eq, Debug, Clone)]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum PublicKey {
     /// 256 bit elliptic curve based public-key.
     ED25519(ED25519PublicKey),
@@ -32,6 +43,7 @@ impl std::fmt::Display for PublicKey {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -41,6 +53,7 @@ impl Serialize for PublicKey {
     }
 }
 
+#[cfg(feature = "borsh")]
 impl BorshSerialize for PublicKey {
     fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
         match self {
@@ -57,6 +70,7 @@ impl BorshSerialize for PublicKey {
     }
 }
 
+#[cfg(feature = "borsh")]
 impl BorshDeserialize for PublicKey {
     fn deserialize(buf: &mut &[u8]) -> std::io::Result<Self> {
         let key_type = <u8 as BorshDeserialize>::deserialize(buf)?;
@@ -128,6 +142,7 @@ impl TryFrom<Vec<u8>> for PublicKey {
 }
 
 // Serialization
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for PublicKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -175,6 +190,7 @@ impl<'de> Deserialize<'de> for PublicKey {
 }
 
 // Big Array
+#[cfg(feature = "serde")]
 impl Serialize for Secp256K1PublicKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -188,6 +204,7 @@ impl Serialize for Secp256K1PublicKey {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Secp256K1PublicKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -220,6 +237,7 @@ impl<'de> Deserialize<'de> for Secp256K1PublicKey {
     }
 }
 
+#[cfg(feature = "schemars")]
 impl JsonSchema for Secp256K1PublicKey {
     fn schema_name() -> Cow<'static, str> {
         "Secp256K1PublicKey".into()

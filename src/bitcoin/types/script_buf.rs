@@ -1,12 +1,16 @@
 use core::fmt;
 use std::io::{BufRead, Write};
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
 
 use crate::bitcoin::encoding::{encode::Encodable, Decodable};
 
-#[derive(Debug, Default, Clone, PartialEq, Eq, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct ScriptBuf(pub Vec<u8>);
 
 impl ScriptBuf {
@@ -58,6 +62,7 @@ impl Decodable for ScriptBuf {
     }
 }
 
+#[cfg(feature = "serde")]
 impl serde::Serialize for ScriptBuf {
     /// User-facing serialization for `Script`.
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -68,6 +73,7 @@ impl serde::Serialize for ScriptBuf {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> serde::Deserialize<'de> for ScriptBuf {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

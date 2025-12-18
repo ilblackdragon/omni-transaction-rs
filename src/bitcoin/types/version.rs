@@ -3,9 +3,13 @@ use std::{
     io::{self, BufRead, Write},
 };
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::Deserializer;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::bitcoin::encoding::{Decodable, Encodable};
@@ -15,8 +19,10 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// Currently, as specified by [BIP-68], only version 1 and 2 are considered standard.
 ///
 /// [BIP-68]: https://github.com/bitcoin/bips/blob/master/bip-0068.mediawiki
-#[derive(Debug, Copy, PartialEq, Eq, Clone, BorshSerialize, BorshDeserialize, JsonSchema)]
-#[borsh(use_discriminant = true)]
+#[derive(Debug, Copy, PartialEq, Eq, Clone)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "borsh", borsh(use_discriminant = true))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum Version {
     /// The original Bitcoin transaction version (pre-BIP-68)
     One = 1,
@@ -61,6 +67,7 @@ impl Decodable for Version {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for Version {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -74,6 +81,7 @@ impl Serialize for Version {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Version {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -141,7 +149,7 @@ impl fmt::Display for Version {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "borsh", feature = "serde", feature = "serde_json"))]
 mod tests {
     use super::*;
     use std::io::Cursor;

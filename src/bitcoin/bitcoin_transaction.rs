@@ -1,5 +1,8 @@
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::io::{BufRead, Write};
@@ -64,17 +67,10 @@ use super::{
 /// "#;
 /// let tx = BitcoinTransaction::from_json(json_value).unwrap();
 ///
-#[derive(
-    Debug,
-    Clone,
-    PartialEq,
-    Eq,
-    Serialize,
-    Deserialize,
-    BorshSerialize,
-    BorshDeserialize,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct BitcoinTransaction {
     /// The protocol version, is currently expected to be 1 or 2 (BIP 68).
     pub version: Version,
@@ -260,6 +256,7 @@ impl BitcoinTransaction {
     }
 
     /// Serialise a JSON representation of the transaction into a BitcoinTransaction struct
+    #[cfg(feature = "serde_json")]
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         let tx: Self = serde_json::from_str(json)?;
         Ok(tx)
@@ -564,6 +561,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_from_json_bitcoin_transaction() {
         let json = r#"
         {
@@ -598,6 +596,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_from_json_bitcoin_transaction_2() {
         let json = r#"
         {
@@ -664,6 +663,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_from_json_bitcoin_transaction_3() {
         let json = r#"
         {
@@ -730,6 +730,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_from_json_bitcoin_transaction_4() {
         let json = r#"
             {
@@ -767,6 +768,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_from_json_bitcoin_transaction_5() {
         let json_data = r#"
         {

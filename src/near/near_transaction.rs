@@ -1,6 +1,9 @@
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_account_id::AccountId;
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use super::types::{Action, BlockHash, PublicKey, Signature, U64};
@@ -25,13 +28,16 @@ use super::types::{Action, BlockHash, PublicKey, Signature, U64};
 ///     actions,
 /// };
 /// ```
-#[derive(Serialize, Deserialize, Debug, Clone, BorshSerialize, BorshDeserialize, JsonSchema)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct NearTransaction {
     /// An account on which behalf transaction is signed
     pub signer_id: AccountId,
     /// A public key of the access key which was used to sign an account.
     /// Access key holds permissions for calling certain kinds of actions.
-    #[serde(rename = "public_key")]
+    #[cfg_attr(feature = "serde", serde(rename = "public_key"))]
     pub signer_public_key: PublicKey,
     /// Nonce is used to determine order of transaction in the pool.
     /// It increments for a combination of `signer_id` and `public_key`
@@ -45,17 +51,20 @@ pub struct NearTransaction {
 }
 
 /// Signed NEAR transaction abstraction
-#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 pub struct SignedTransaction {
     pub transaction: NearTransaction,
     pub signature: Signature,
 }
 
 impl NearTransaction {
+    #[cfg(feature = "borsh")]
     pub fn build_for_signing(&self) -> Vec<u8> {
         borsh::to_vec(self).expect("failed to serialize NEAR transaction")
     }
 
+    #[cfg(feature = "borsh")]
     pub fn build_with_signature(&self, signature: Signature) -> Vec<u8> {
         let signed_tx = SignedTransaction {
             transaction: self.clone(),
@@ -64,12 +73,13 @@ impl NearTransaction {
         borsh::to_vec(&signed_tx).expect("failed to serialize NEAR transaction")
     }
 
+    #[cfg(feature = "serde_json")]
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(json)
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "borsh", feature = "serde"))]
 mod tests {
     use std::str::FromStr;
     use std::sync::Arc;

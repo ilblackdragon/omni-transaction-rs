@@ -2,24 +2,20 @@ use crate::near::{
     types::{BlockHash, PublicKey, Signature},
     utils::base64_serialization,
 };
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_account_id::AccountId;
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use super::{U128, U64};
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum Action {
     /// Create an (sub)account using a transaction `receiver_id` as an ID for
     /// a new account ID must pass validation rules described here
@@ -38,50 +34,29 @@ pub enum Action {
     UseGlobalContract(Box<UseGlobalContractAction>),
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct DeployGlobalContractAction {
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte"))]
+    #[cfg_attr(feature = "serde", serde(with = "base64_serialization"))]
+    #[cfg_attr(feature = "schemars", schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte")))]
     pub code: Vec<u8>,
     pub deploy_mode: GlobalContractDeployMode,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct UseGlobalContractAction {
     pub contract_identifier: GlobalContractIdentifier,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum GlobalContractDeployMode {
     /// Contract is deployed under its code hash.
     /// Users will be able reference it by that hash.
@@ -93,98 +68,56 @@ pub enum GlobalContractDeployMode {
     AccountId,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum GlobalContractIdentifier {
     CodeHash(BlockHash),
     AccountId(AccountId),
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct CreateAccountAction {}
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct DeployContractAction {
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte"))]
+    #[cfg_attr(feature = "serde", serde(with = "base64_serialization"))]
+    #[cfg_attr(feature = "schemars", schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte")))]
     pub code: Vec<u8>,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct FunctionCallAction {
     pub method_name: String,
-    #[serde(with = "base64_serialization")]
-    #[schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte"))]
+    #[cfg_attr(feature = "serde", serde(with = "base64_serialization"))]
+    #[cfg_attr(feature = "schemars", schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte")))]
     pub args: Vec<u8>,
     pub gas: U64,
     pub deposit: U128,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct TransferAction {
     pub deposit: U128,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct StakeAction {
     /// Amount of tokens to stake.
     pub stake: U128,
@@ -192,17 +125,10 @@ pub struct StakeAction {
     pub public_key: PublicKey,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct AddKeyAction {
     /// A public key which will be associated with an access_key
     pub public_key: PublicKey,
@@ -210,17 +136,10 @@ pub struct AddKeyAction {
     pub access_key: AccessKey,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct AccessKey {
     /// Nonce for this access key, used for tx nonce generation. When access key is created, nonce
     /// is set to `(block_height - 1) * 1e6` to avoid tx hash collision on access key re-creation.
@@ -230,17 +149,10 @@ pub struct AccessKey {
     pub permission: AccessKeyPermission,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub enum AccessKeyPermission {
     FunctionCall(FunctionCallPermission),
     /// Grants full access to the account.
@@ -248,65 +160,37 @@ pub enum AccessKeyPermission {
     FullAccess,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct FunctionCallPermission {
     pub allowance: Option<U128>,
     pub receiver_id: String,
     pub method_names: Vec<String>,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct DeleteKeyAction {
     /// A public key associated with the access_key to be deleted.
     pub public_key: PublicKey,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct DeleteAccountAction {
     pub beneficiary_id: AccountId,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct NonDelegateAction(Action);
 
 impl TryFrom<Action> for NonDelegateAction {
@@ -319,17 +203,10 @@ impl TryFrom<Action> for NonDelegateAction {
     }
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct DelegateAction {
     pub sender_id: AccountId,
     pub receiver_id: AccountId,
@@ -339,23 +216,16 @@ pub struct DelegateAction {
     pub public_key: PublicKey,
 }
 
-#[derive(
-    Serialize,
-    Deserialize,
-    Debug,
-    Clone,
-    BorshSerialize,
-    BorshDeserialize,
-    PartialEq,
-    Eq,
-    JsonSchema,
-)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct SignedDelegateAction {
     pub delegate_action: DelegateAction,
     pub signature: Signature,
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "borsh", feature = "serde", feature = "serde_json"))]
 mod tests {
     use super::*;
     use crate::constants::ED25519_PUBLIC_KEY_LENGTH;

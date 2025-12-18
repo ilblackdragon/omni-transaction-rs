@@ -3,8 +3,11 @@ use std::{
     io::{BufRead, Write},
 };
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::{de::MapAccess, Deserialize, Deserializer, Serialize};
 
 use super::hash::Hash;
@@ -17,9 +20,10 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// ### Bitcoin Core References
 ///
 /// * [COutPoint definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L26)
-#[derive(
-    Debug, Copy, Clone, Eq, PartialEq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
-)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct OutPoint {
     /// The referenced transaction's txid.
     pub txid: Txid,
@@ -74,6 +78,7 @@ impl Decodable for OutPoint {
     }
 }
 
+#[cfg(all(feature = "serde", feature = "serde_json"))]
 impl<'de> Deserialize<'de> for OutPoint {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -83,8 +88,10 @@ impl<'de> Deserialize<'de> for OutPoint {
     }
 }
 
+#[cfg(all(feature = "serde", feature = "serde_json"))]
 struct OutPointVisitor;
 
+#[cfg(all(feature = "serde", feature = "serde_json"))]
 impl<'de> serde::de::Visitor<'de> for OutPointVisitor {
     type Value = OutPoint;
 
@@ -179,6 +186,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_serde_json_outpoint() {
         let json_string = r#"{
             "txid":"bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a",
@@ -202,6 +210,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_serde_json_outpoint_with_string_vout() {
         let json_string = r#"{
             "txid":"bc25cc0dddd0a202c21e66521a692c0586330a9a9dcc38ccd9b4d2093037f31a",
@@ -225,6 +234,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(all(feature = "serde", feature = "serde_json"))]
     fn test_serde_json_outpoint_with_arrays() {
         let json_string = r#"{
             "txid": [59, 103, 22, 67, 189, 12, 138, 114, 42, 90, 207, 173, 211, 254, 197, 194, 92, 65, 224, 168, 146, 169, 213, 217, 184, 81, 123, 217, 19, 81, 69, 71],

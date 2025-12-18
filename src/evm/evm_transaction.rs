@@ -3,8 +3,11 @@ use super::types::{AccessList, Address, Signature};
 use super::utils::parse_eth_address;
 use crate::constants::EIP_1559_TYPE;
 use rlp::RlpStream;
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::de::{Error as DeError, Visitor};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 
@@ -33,22 +36,24 @@ use std::fmt;
 /// };
 /// ```
 ///
-#[derive(Debug, Serialize, Deserialize, JsonSchema, Clone)]
+#[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct EVMTransaction {
-    #[serde(deserialize_with = "deserialize_u64")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u64"))]
     pub chain_id: u64,
-    #[serde(deserialize_with = "deserialize_u64")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u64"))]
     pub nonce: u64,
-    #[serde(deserialize_with = "deserialize_address")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_address"))]
     pub to: Option<Address>,
-    #[serde(deserialize_with = "deserialize_u128")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u128"))]
     pub value: u128,
     pub input: Vec<u8>,
-    #[serde(deserialize_with = "deserialize_u128")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u128"))]
     pub gas_limit: u128,
-    #[serde(deserialize_with = "deserialize_u128")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u128"))]
     pub max_fee_per_gas: u128,
-    #[serde(deserialize_with = "deserialize_u128")]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize_u128"))]
     pub max_priority_fee_per_gas: u128,
     pub access_list: AccessList,
 }
@@ -119,6 +124,7 @@ impl EVMTransaction {
         }
     }
 
+    #[cfg(feature = "serde_json")]
     pub fn from_json(json: &str) -> Result<Self, serde_json::Error> {
         let v: serde_json::Value = serde_json::from_str(json)?;
 
@@ -188,6 +194,7 @@ fn parse_u128(value: &str) -> Result<u128, std::num::ParseIntError> {
     )
 }
 
+#[cfg(feature = "serde")]
 fn deserialize_address<'de, D>(deserializer: D) -> Result<Option<Address>, D::Error>
 where
     D: Deserializer<'de>,
@@ -251,6 +258,7 @@ where
     ))
 }
 
+#[cfg(feature = "serde")]
 pub fn deserialize_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
 where
     D: Deserializer<'de>,
@@ -277,6 +285,7 @@ where
     deserializer.deserialize_any(U64FlexibleVisitor)
 }
 
+#[cfg(feature = "serde")]
 pub fn deserialize_u128<'de, D>(deserializer: D) -> Result<u128, D::Error>
 where
     D: Deserializer<'de>,
@@ -310,8 +319,10 @@ where
 
 #[cfg(test)]
 mod tests {
+    #[cfg(feature = "serde")]
     use serde::{Deserialize, Serialize};
 
+    #[cfg(feature = "serde")]
     #[derive(Deserialize, Serialize, Debug)]
     pub struct SignCallbackArgs {
         pub nonce: u64,

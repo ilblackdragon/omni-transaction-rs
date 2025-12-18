@@ -9,9 +9,13 @@ use std::{
     io::{BufRead, Write},
 };
 
+#[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
+#[cfg(feature = "schemars")]
 use schemars::JsonSchema;
+#[cfg(feature = "serde")]
 use serde::Deserializer;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 /// Locktime itself is an unsigned 4-byte integer which can be parsed two ways:
@@ -24,9 +28,10 @@ use serde::{Deserialize, Serialize};
 /// The transaction can be added to any block whose block time is greater than the locktime.
 ///
 /// [Bitcoin Devguide]: https://developer.bitcoin.org/devguide/transactions.html#locktime-and-sequence-number
-#[derive(
-    Debug, Clone, Copy, PartialEq, Eq, Serialize, BorshSerialize, BorshDeserialize, JsonSchema,
-)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize))]
+#[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
+#[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct LockTime(u32);
 
 impl LockTime {
@@ -77,6 +82,7 @@ impl Decodable for LockTime {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for LockTime {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
