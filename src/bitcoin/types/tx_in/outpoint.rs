@@ -20,11 +20,11 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 /// A reference to a transaction output.
 ///
 /// ### Serialization
-/// 
-/// When both `serde` and `serde_json` features are enabled, OutPoint supports flexible JSON 
+///
+/// When both `serde` and `serde_json` features are enabled, OutPoint supports flexible JSON
 /// deserialization (accepts txid as hex string or byte array, vout as number or string).
 /// When only `serde` feature is enabled, OutPoint can be serialized but not deserialized from JSON.
-/// 
+///
 /// ### Bitcoin Core References
 ///
 /// * [COutPoint definition](https://github.com/bitcoin/bitcoin/blob/345457b542b6a980ccfbc868af0970a6f91d1b82/src/primitives/transaction.h#L26)
