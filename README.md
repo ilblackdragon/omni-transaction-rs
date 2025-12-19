@@ -29,7 +29,7 @@ For a complete set of examples see the [examples](https://github.com/Omni-rs/exa
 The library provides safe wrappers for NEAR gas and token amounts:
 
 ```rust
-use omni_transaction::near::{NearGas, NearToken};
+use omni_transaction::near::types::{NearGas, NearToken};
 
 // Creating NearToken amounts
 let one_near = NearToken::from_near(1);           // 1 NEAR
@@ -44,7 +44,7 @@ let gas = NearGas::from_gas(100_000_000_000);     // 100 TGas
 Building a NEAR transaction:
 ```rust
 use omni_transaction::{TransactionBuilder, TxBuilder, NEAR};
-use omni_transaction::near::{NearGas, NearToken};
+use omni_transaction::near::types::{NearGas, NearToken};
 use omni_transaction::near::utils::PublicKeyStrExt;
 use omni_transaction::near::types::{Action, TransferAction, U64};
 
@@ -73,7 +73,7 @@ let near_tx_encoded = near_tx.build_for_signing();
 
 Building a NEAR function call with gas and deposit:
 ```rust
-use omni_transaction::near::types::FunctionCallAction;
+use omni_transaction::near::types::{Action, FunctionCallAction, NearGas, NearToken};
 
 let function_call = Action::FunctionCall(Box::new(FunctionCallAction {
     method_name: "my_method".to_string(),

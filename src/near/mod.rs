@@ -8,7 +8,3 @@ pub mod utils;
 pub use near_transaction::NearTransaction;
 /// NEAR transaction builder
 pub use near_transaction_builder::NearTransactionBuilder;
-
-// Re-export commonly used types for convenience
-pub use near_account_id::{AccountId, AccountIdRef};
-pub use types::{NearGas, NearToken};
