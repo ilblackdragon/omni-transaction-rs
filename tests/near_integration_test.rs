@@ -1,3 +1,5 @@
+#![cfg(feature = "near")]
+
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use eyre::Result;
@@ -76,7 +78,7 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_near(
     let signature = signer.sign(&hashed_tx_value);
 
     // Create CryptoHash from the SHA256 digest of the signed transaction
-    let tx_hash = CryptoHash::hash_bytes(&sha2::Sha256::digest(&near_tx_encoded));
+    let tx_hash = CryptoHash::hash_bytes(&hashed_tx_value);
 
     // @dev For simplicity we only support ED25519 signature in this test
     let signature_bytes: [u8; 64] = match &signature {
@@ -153,7 +155,7 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_near(
         alice_original_balance.as_yoctonear() - alice_final_balance.as_yoctonear() - one_yocto_near;
 
     let expected_alice_balance = alice_original_balance.as_yoctonear() - gas_cost - one_yocto_near;
-    let expected_bob_balance = bob_original_balance.as_yoctonear() + 1;
+    let expected_bob_balance = bob_original_balance.as_yoctonear() + one_yocto_near;
 
     assert_eq!(alice_final_balance.as_yoctonear(), expected_alice_balance);
     assert_eq!(bob_final_balance.as_yoctonear(), expected_bob_balance);

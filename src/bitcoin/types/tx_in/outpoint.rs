@@ -1,7 +1,4 @@
-use std::{
-    fmt,
-    io::{BufRead, Write},
-};
+use std::io::{BufRead, Write};
 
 #[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -101,7 +98,7 @@ struct OutPointVisitor;
 impl<'de> serde::de::Visitor<'de> for OutPointVisitor {
     type Value = OutPoint;
 
-    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         formatter.write_str("a map with txid as a hex string and vout as a number or string")
     }
 

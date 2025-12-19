@@ -252,9 +252,9 @@ impl JsonSchema for Secp256K1PublicKey {
 mod tests {
     use super::*;
     use borsh;
-    use serde_json;
 
     #[test]
+    #[cfg(feature = "serde_json")]
     fn test_compare_serde_json_with_near_primitives() {
         let public_key = PublicKey::ED25519(ED25519PublicKey([1; ED25519_PUBLIC_KEY_LENGTH]));
         let public_key_json = serde_json::to_string(&public_key).unwrap();
@@ -306,6 +306,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde_json")]
     fn test_public_key_serde_json_serialization() {
         let ed25519_key = PublicKey::ED25519(ED25519PublicKey([8; ED25519_PUBLIC_KEY_LENGTH]));
         let secp256k1_key =
@@ -356,6 +357,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde_json")]
     fn test_public_key_json_to_borsh_roundtrip() {
         let ed25519_json = r#"
             {

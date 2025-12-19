@@ -1,3 +1,5 @@
+#![cfg(feature = "evm")]
+
 use alloy::providers::Provider;
 use alloy::signers::Signer;
 use alloy::{

@@ -1,22 +1,14 @@
-use crate::bitcoin::{
-    encoding::{Decodable, Encodable},
-    types::lock_time::constants::LOCK_TIME_THRESHOLD,
-};
+use crate::bitcoin::encoding::{Decodable, Encodable};
 
 use super::{height::Height, time::Time};
-use std::{
-    fmt,
-    io::{BufRead, Write},
-};
+use std::io::{BufRead, Write};
 
 #[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
 #[cfg(feature = "schemars")]
 use schemars::JsonSchema;
 #[cfg(feature = "serde")]
-use serde::Deserializer;
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 /// Locktime itself is an unsigned 4-byte integer which can be parsed two ways:
 ///
@@ -88,6 +80,10 @@ impl<'de> Deserialize<'de> for LockTime {
     where
         D: Deserializer<'de>,
     {
+        use crate::bitcoin::types::lock_time::constants::LOCK_TIME_THRESHOLD;
+
+        use std::fmt;
+
         struct StringOrNumberVisitor;
 
         impl serde::de::Visitor<'_> for StringOrNumberVisitor {
@@ -181,6 +177,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_locktime_serialization() {
         let locktime = LockTime::from_height(100).unwrap();
         let serialized = serde_json::to_string(&locktime).unwrap();
@@ -190,6 +187,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "borsh")]
     fn test_locktime_borsh_serialization() {
         let locktime = LockTime::from_height(100).unwrap();
         let serialized = borsh::to_vec(&locktime).unwrap();
@@ -199,6 +197,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "borsh")]
     fn test_locktime_borsh_serialization_time() {
         let locktime = LockTime::from_time(Time::MIN + 100).unwrap();
         let serialized = borsh::to_vec(&locktime).unwrap();
@@ -208,6 +207,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "borsh")]
     fn test_locktime_borsh_serialization_roundtrip() {
         let original = LockTime::from_height(Height::MAX).unwrap();
         let serialized = borsh::to_vec(&original).unwrap();
@@ -228,6 +228,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_from_json_locktime() {
         let json = r#"0"#;
 
@@ -236,6 +237,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_serde_json_locktime_with_number_as_string() {
         let json = r#""0""#;
 

@@ -20,14 +20,14 @@ panic = "abort"
 overflow-checks = true
 
 [features]
-default = ["all", "serde", "serde_json", "borsh", "schemars"]
+default = ["all", "serde", "serde_json", "schemars"]
 all = ["near", "bitcoin", "evm"]
 bitcoin = ["sha2"]
 evm = []
-near = []
-serde = ["dep:serde", "dep:serde-big-array", "near-account-id/serde"]
-serde_json = ["dep:serde_json", "serde"]
+near = ["borsh"]
 borsh = ["dep:borsh", "near-account-id/borsh"]
+serde = ["dep:serde", "dep:serde-big-array", "dep:base64", "near-account-id/serde"]
+serde_json = ["dep:serde_json", "serde"]
 schemars = ["dep:schemars", "near-account-id/schemars-v1"]
 
 [dependencies]
@@ -41,7 +41,7 @@ bs58 = "0.5.1"
 serde = { version = "1.0", features = ["derive"], optional = true }
 schemars = { version = "1.0", optional = true }
 sha2 = { version = "0.10.8", optional = true }
-base64 = "0.22"
+base64 = { version = "0.22", optional = true }
 
 
 [dev-dependencies]
@@ -55,6 +55,9 @@ near-primitives = { version = "0.34" }
 near-crypto = { version = "0.34" }
 near-jsonrpc-client = { version = "0.20", features = ["any"] }
 near-workspaces = { version = "0.22", features = ["experimental", "unstable"] }
+serde_json = { version = "1.0" }
+sha2 = { version = "0.10.8" }
+base64 = { version = "0.22" }
 
 # bitcoin
 bitcoin = { version = "0.32.0", default-features = false, features = [

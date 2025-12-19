@@ -123,6 +123,7 @@ mod tests {
     use serde_json;
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_compare_serde_json_with_near_primitives() {
         let bytes = "3s1dvZdQtcAjBksMHFrysqvF63wnyMHPA4owNQmCJZ2EBakZEKdtMsLqrHdKWQjJbSRN6kRknN2WdwSBLWGCokXj".to_fixed_64_bytes().unwrap();
 
@@ -152,6 +153,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_deserialize_ed25519_signature() {
         let serialized = "\"ed25519:3s1dvZdQtcAjBksMHFrysqvF63wnyMHPA4owNQmCJZ2EBakZEKdtMsLqrHdKWQjJbSRN6kRknN2WdwSBLWGCokXj\"";
         let deserialized: Signature = serde_json::from_str(serialized).unwrap();
@@ -167,6 +169,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_deserialize_secp256k1_signature() {
         let serialized = "\"secp256k1:5N5CB9H1dmB9yraLGCo4ZCQTcF24zj4v2NT14MHdH3aVhRoRXrX3AhprHr2w6iXNBZDmjMS1Ntzjzq8Bv6iBvwth6\"";
         let deserialized: Signature = serde_json::from_str(serialized).unwrap();
@@ -179,6 +182,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_deserialize_with_invalid_data() {
         let invalid = "\"secp256k1:2xVqteU8PWhadHTv99TGh3bSf\"";
 
@@ -186,6 +190,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_serialize_ed25519_signature() {
         // Decode the base58 signature to get the components r and s
         let decoded = "ed25519:3s1dvZdQtcAjBksMHFrysqvF63wnyMHPA4owNQmCJZ2EBakZEKdtMsLqrHdKWQjJbSRN6kRknN2WdwSBLWGCokXj".to_signature_as_bytes().unwrap();
@@ -202,6 +207,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "serde")]
     fn test_serialize_secp256k1_signature() {
         // Decode the base58 signature to get the array of bytes
         let decoded = "secp256k1:5N5CB9H1dmB9yraLGCo4ZCQTcF24zj4v2NT14MHdH3aVhRoRXrX3AhprHr2w6iXNBZDmjMS1Ntzjzq8Bv6iBvwth6".to_signature_as_bytes().unwrap();

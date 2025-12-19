@@ -11,7 +11,7 @@
 //! ### Installation
 //! ```toml
 //! [dependencies]
-//! omni-transaction = "0.2.1"
+//! omni-transaction = "0.3"
 //! ```
 //!
 //! ### Examples
@@ -21,9 +21,15 @@
 //! ###### Building a NEAR transaction:
 //!
 //! ```rust
+//! # #[cfg(feature = "near")]
+//! # let _ = {
+//! use omni_transaction::{TransactionBuilder, TxBuilder, NEAR};
+//! use omni_transaction::near::utils::PublicKeyStrExt;
+//! use omni_transaction::near::types::{Action, TransferAction, U128};
+//!
 //! let signer_id = "alice.near";
 //! let signer_public_key = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
-//! let nonce = U64(0);
+//! let nonce = 0;
 //! let receiver_id = "bob.near";
 //! let block_hash_str = "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ";
 //! let transfer_action = Action::Transfer(TransferAction { deposit: U128(1) });
@@ -40,11 +46,17 @@
 //!
 //! // Now you have access to build_for_signing that returns the encoded payload
 //! let near_tx_encoded = near_tx.build_for_signing();
+//! # };
 //! ```
 //!
 //! ###### Building an Ethereum transaction:
 //!
 //! ```rust
+//! # #[cfg(feature = "evm")]
+//! # let _ = {
+//! use omni_transaction::{TransactionBuilder, TxBuilder, EVM};
+//! use omni_transaction::evm::utils::parse_eth_address;
+//!
 //! let to_address_str = "d8dA6BF26964aF9D7eEd9e03E53415D37aA96045";
 //! let to_address = parse_eth_address(to_address_str);
 //! let max_gas_fee: u128 = 20_000_000_000;
@@ -68,11 +80,17 @@
 //!
 //! // Now you have access to build_for_signing that returns the encoded payload
 //! let rlp_encoded = evm_tx.build_for_signing();
+//! # };
 //! ```
 //!
 //! ###### Building a Bitcoin transaction:
 //!
 //! ```rust
+//! # #[cfg(feature = "bitcoin")]
+//! # let _ = {
+//! use omni_transaction::{TransactionBuilder, TxBuilder, BITCOIN};
+//! use omni_transaction::bitcoin::types::{Amount, EcdsaSighashType, Hash, LockTime, OutPoint, ScriptBuf, Sequence, Txid, TxIn, TxOut, Version, Witness};
+//!
 //! let txid_str = "2ece6cd71fee90ff613cee8f30a52c3ecc58685acf9b817b9c467b7ff199871c";
 //! let hash = Hash::from_hex(txid_str).unwrap();
 //! let txid = Txid(hash);
@@ -109,6 +127,7 @@
 //!
 //! // Prepare the transaction for signing
 //! let encoded_tx = bitcoin_tx.build_for_signing_legacy(EcdsaSighashType::All);
+//! # };
 //! ```
 //!
 //! ### Features
@@ -121,13 +140,13 @@
 //!
 //! ```toml
 //! [dependencies]
-//! omni-transaction = { version = "0.2.1", features = ["near"] }
+//! omni-transaction = { version = "0.3", features = ["near"] }
 //! ```
 //! or
 //!
 //! ```toml
 //! [dependencies]
-//! omni-transaction = { version = "0.2.1", features = ["evm"] }
+//! omni-transaction = { version = "0.3", features = ["evm"] }
 //! ```
 //!
 #[cfg(feature = "bitcoin")]

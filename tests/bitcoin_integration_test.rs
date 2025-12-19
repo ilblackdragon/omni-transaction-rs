@@ -1,3 +1,5 @@
+#![cfg(feature = "bitcoin")]
+
 // Rust Bitcoin
 use bitcoin::consensus::Encodable;
 use bitcoin::hashes::{sha256d, Hash};

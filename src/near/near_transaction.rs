@@ -11,6 +11,9 @@ use super::types::{Action, BlockHash, PublicKey, Signature, U64};
 ///
 /// ###### Example:
 /// ```rust
+/// use omni_transaction::near::utils::PublicKeyStrExt;
+/// use omni_transaction::near::types::{Action, TransferAction, U64, U128};
+///
 /// let signer_id = "alice.near";
 /// let signer_public_key = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
 /// let nonce = U64(0);
@@ -19,7 +22,7 @@ use super::types::{Action, BlockHash, PublicKey, Signature, U64};
 /// let transfer_action = Action::Transfer(TransferAction { deposit: U128(1) });
 /// let actions = vec![transfer_action];
 ///
-/// let omni_tx = NearTransaction {
+/// let omni_tx = omni_transaction::near::NearTransaction {
 ///     signer_id: signer_id.parse().unwrap(),
 ///     signer_public_key: signer_public_key.to_public_key().unwrap(),
 ///     nonce,

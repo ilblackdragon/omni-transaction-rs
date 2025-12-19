@@ -19,31 +19,31 @@ impl TransactionBuilder {
 }
 
 #[cfg(test)]
+#[cfg(any(feature = "evm", feature = "near"))]
 mod tests {
-
     use super::{TransactionBuilder as OmniTransactionBuilder, TxBuilder};
-    use crate::near::types::{
-        Action as OmniAction, BlockHash, PublicKey as OmniPublicKey,
-        TransferAction as OmniTransferAction, U128,
-    };
-    use crate::{
-        evm::utils::parse_eth_address,
-        transaction_builders::{EVM, NEAR},
-    };
     use alloy::{
         consensus::SignableTransaction,
         network::TransactionBuilder,
         primitives::{address, Address, U256},
         rpc::types::TransactionRequest,
     };
-    use near_crypto::PublicKey;
-    use near_primitives::{
-        action::Action, action::TransferAction, hash::CryptoHash, transaction::TransactionV0,
-        types::Balance,
-    };
 
     #[test]
+    #[cfg(feature = "near")]
     fn test_near_transaction_builder_typed() {
+        use crate::near::types::{
+            Action as OmniAction, BlockHash, PublicKey as OmniPublicKey,
+            TransferAction as OmniTransferAction, U128,
+        };
+        use crate::transaction_builders::NEAR;
+
+        use near_crypto::PublicKey;
+        use near_primitives::{
+            action::Action, action::TransferAction, hash::CryptoHash, transaction::TransactionV0,
+            types::Balance,
+        };
+
         let signer_id = "alice.near";
         let signer_public_key = [0u8; 64];
         let nonce = 0;
@@ -81,7 +81,10 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "evm")]
     fn test_evm_transaction_builder_typed() {
+        use crate::{evm::utils::parse_eth_address, transaction_builders::EVM};
+
         const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
         const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
         const GAS_LIMIT: u128 = 21_000;

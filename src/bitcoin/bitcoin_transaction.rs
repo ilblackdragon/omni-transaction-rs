@@ -22,8 +22,10 @@ use super::{
 /// or you can do it from a JSON.
 ///
 /// ```rust
+/// use omni_transaction::bitcoin::types::{Amount, Hash, LockTime, OutPoint, ScriptBuf, Sequence, Txid, TxIn, TxOut, Version, Witness};
+///
 /// // The first case would be as follows:
-/// let omni_tx = BitcoinTransaction {
+/// let omni_tx = omni_transaction::bitcoin::BitcoinTransaction {
 ///     version: Version::One,
 ///     lock_time: LockTime::from_height(1000000).unwrap(),
 ///     input: vec![TxIn {
@@ -35,13 +37,15 @@ use super::{
 ///         sequence: Sequence::default(),
 ///         witness: Witness::default(),
 ///     }],
-///    output: vec![TxOut {
-///        value: Amount::from_sat(10000),
+///     output: vec![TxOut {
+///         value: Amount::from_sat(10000),
 ///         script_pubkey: ScriptBuf::default(),
-///    }],
+///     }],
 /// };
 ///
 /// // If you prefer to do it from a JSON:
+/// # #[cfg(feature = "serde_json")]
+/// # let _ = {
 /// let json_value = r#"
 /// {
 ///     "version": "1",
@@ -54,7 +58,7 @@ use super::{
 ///         "script_sig": [],
 ///         "sequence": 4294967295,
 ///         "witness": []
-///    }],s
+///     }],
 ///     "output": [{
 ///         "value": 1,
 ///         "script_pubkey": "76a9148356ecd5f1761e60c144dc2f4de6bf7d8be7690688ad"
@@ -65,8 +69,9 @@ use super::{
 ///    }]
 /// }
 /// "#;
-/// let tx = BitcoinTransaction::from_json(json_value).unwrap();
-///
+/// let tx = omni_transaction::bitcoin::BitcoinTransaction::from_json(json_value).unwrap();
+/// # };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
