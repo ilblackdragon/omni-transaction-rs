@@ -9,7 +9,7 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use super::{U128, U64};
+use super::{NearGas, NearToken, U64};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -101,8 +101,8 @@ pub struct FunctionCallAction {
     #[cfg_attr(feature = "serde", serde(with = "base64_serialization"))]
     #[cfg_attr(feature = "schemars", schemars(with = "String", extend("contentMediaType"="application/octet-stream", "contentEncoding" = "base64", "format" = "byte")))]
     pub args: Vec<u8>,
-    pub gas: U64,
-    pub deposit: U128,
+    pub gas: NearGas,
+    pub deposit: NearToken,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -110,7 +110,7 @@ pub struct FunctionCallAction {
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct TransferAction {
-    pub deposit: U128,
+    pub deposit: NearToken,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,7 +119,7 @@ pub struct TransferAction {
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct StakeAction {
     /// Amount of tokens to stake.
-    pub stake: U128,
+    pub stake: NearToken,
     /// Validator key which will be used to sign transactions on behalf of signer_id
     pub public_key: PublicKey,
 }
@@ -164,7 +164,7 @@ pub enum AccessKeyPermission {
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]
 pub struct FunctionCallPermission {
-    pub allowance: Option<U128>,
+    pub allowance: Option<NearToken>,
     pub receiver_id: String,
     pub method_names: Vec<String>,
 }
@@ -263,8 +263,8 @@ mod tests {
                 Action::FunctionCall(Box::new(FunctionCallAction {
                     method_name: "test".to_string(),
                     args: vec![4, 5, 6],
-                    gas: U64(1000000),
-                    deposit: U128(0),
+                    gas: NearGas::from_gas(1000000),
+                    deposit: NearToken::from_yoctonear(0),
                 })),
                 NearPrimitiveAction::FunctionCall(Box::new(NearPrimitiveFunctionCallAction {
                     method_name: "test".to_string(),
@@ -275,7 +275,7 @@ mod tests {
             ),
             (
                 Action::Transfer(TransferAction {
-                    deposit: U128(1000000000),
+                    deposit: NearToken::from_yoctonear(1000000000),
                 }),
                 NearPrimitiveAction::Transfer(NearPrimitiveTransferAction {
                     deposit: Balance::from_yoctonear(1000000000),
@@ -283,7 +283,7 @@ mod tests {
             ),
             (
                 Action::Stake(Box::new(StakeAction {
-                    stake: U128(100000000),
+                    stake: NearToken::from_yoctonear(100000000),
                     public_key: PublicKey::ED25519(ED25519PublicKey(
                         [0; ED25519_PUBLIC_KEY_LENGTH],
                     )),

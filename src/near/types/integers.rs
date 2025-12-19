@@ -8,12 +8,17 @@ use serde::Serializer;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 
+// Re-export NearGas and NearToken
+pub use near_gas::NearGas;
+pub use near_token::NearToken;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]
 #[cfg_attr(feature = "serde", derive(Serialize))]
 pub struct U64(pub u64);
 
+// Legacy U128 type - kept for backwards compatibility but should use NearToken instead
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "borsh", derive(BorshSerialize, BorshDeserialize))]
 #[cfg_attr(feature = "schemars", derive(JsonSchema))]

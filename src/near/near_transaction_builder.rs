@@ -93,8 +93,8 @@ impl NearTransactionBuilder {
 mod tests {
     use super::*;
     use crate::near::types::{
-        Action as OmniAction, PublicKey as OmniPublicKey, TransferAction as OmniTransferAction,
-        U128,
+        Action as OmniAction, NearToken, PublicKey as OmniPublicKey,
+        TransferAction as OmniTransferAction,
     };
     use near_crypto::PublicKey;
     use near_primitives::{
@@ -109,7 +109,9 @@ mod tests {
         let nonce = 0;
         let receiver_id: &str = "bob.near";
         let block_hash = BlockHash([0u8; 32]);
-        let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: U128(1) });
+        let transfer_action = OmniAction::Transfer(OmniTransferAction {
+            deposit: NearToken::from_yoctonear(1),
+        });
         let omni_actions = vec![transfer_action];
         let actions = Action::Transfer(TransferAction {
             deposit: Balance::from_yoctonear(1),

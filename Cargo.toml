@@ -24,11 +24,11 @@ default = ["all", "serde", "serde_json", "schemars"]
 all = ["near", "bitcoin", "evm"]
 bitcoin = ["sha2"]
 evm = ["dep:rlp"]
-near = ["dep:near-account-id", "dep:bs58", "borsh"]
-borsh = ["dep:borsh", "near-account-id/borsh"]
-serde = ["dep:serde", "dep:serde-big-array", "dep:base64", "near-account-id/serde"]
+near = ["dep:near-account-id", "dep:near-gas", "dep:near-token", "dep:bs58", "borsh"]
+borsh = ["dep:borsh", "near-account-id/borsh", "near-gas/borsh", "near-token/borsh"]
+serde = ["dep:serde", "dep:serde-big-array", "dep:base64", "near-account-id/serde", "near-gas/serde", "near-token/serde"]
 serde_json = ["dep:serde_json", "serde"]
-schemars = ["dep:schemars", "near-account-id/schemars-v1"]
+schemars = ["dep:schemars", "near-account-id/schemars-v1", "near-gas/schemars-v1", "near-token/schemars-v1"]
 
 [dependencies]
 serde_json = { version = "1.0", optional = true }
@@ -36,6 +36,8 @@ rlp = { version = "0.6.1", optional = true }
 hex = "0.4.3"
 borsh = { version = "1.0.0", features = ["derive"], optional = true }
 near-account-id = { version = "2", optional = true }
+near-gas = { version = "0.3", optional = true }
+near-token = { version = "0.3", optional = true }
 serde-big-array = { version = "0.5.1", optional = true }
 bs58 = { version = "0.5.1", optional = true }
 serde = { version = "1.0", features = ["derive"], optional = true }
