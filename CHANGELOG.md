@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.2](https://github.com/near/omni-transaction-rs/compare/v0.3.1...v0.3.2) - 2025-12-19
+
+### Other
+
+- Make serde, serde_json, borsh, and schemars optional dependencies (enabled by default until the next breaking change release) ([#42](https://github.com/near/omni-transaction-rs/pull/42))
+
 ## [0.3.1](https://github.com/near/omni-transaction-rs/compare/v0.3.0...v0.3.1) - 2025-12-18
 
 ### Other
