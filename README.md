@@ -24,8 +24,26 @@ omni-transaction = "0.3"
 
 For a complete set of examples see the [examples](https://github.com/Omni-rs/examples.git) repository.
 
+### NEAR Types
+
+The library provides safe wrappers for NEAR gas and token amounts:
+
+```rust
+use omni_transaction::near::{NearGas, NearToken};
+
+// Creating NearToken amounts
+let one_near = NearToken::from_near(1);           // 1 NEAR
+let millinear = NearToken::from_millinear(500);   // 0.5 NEAR
+let yoctonear = NearToken::from_yoctonear(1000);  // 1000 yoctoNEAR
+
+// Creating NearGas amounts
+let tgas = NearGas::from_tgas(100);               // 100 TGas
+let gas = NearGas::from_gas(100_000_000_000);     // 100 TGas
+```
+
 Building a NEAR transaction:
 ```rust
+use omni_transaction::{TransactionBuilder, TxBuilder, NEAR};
 use omni_transaction::near::{NearGas, NearToken};
 use omni_transaction::near::utils::PublicKeyStrExt;
 use omni_transaction::near::types::{Action, TransferAction, U64};
@@ -51,6 +69,18 @@ let near_tx = TransactionBuilder::new::<NEAR>()
 
 // Now you have access to build_for_signing that returns the encoded payload
 let near_tx_encoded = near_tx.build_for_signing();
+```
+
+Building a NEAR function call with gas and deposit:
+```rust
+use omni_transaction::near::types::FunctionCallAction;
+
+let function_call = Action::FunctionCall(Box::new(FunctionCallAction {
+    method_name: "my_method".to_string(),
+    args: vec![],
+    gas: NearGas::from_tgas(100),              // 100 TGas
+    deposit: NearToken::from_near(1),          // 1 NEAR
+}));
 ```
 
 Building an Ethereum transaction:
