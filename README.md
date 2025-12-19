@@ -44,9 +44,8 @@ let gas = NearGas::from_gas(100_000_000_000);     // 100 TGas
 Building a NEAR transaction:
 ```rust
 use omni_transaction::{TransactionBuilder, TxBuilder, NEAR};
-use omni_transaction::near::types::{NearGas, NearToken};
+use omni_transaction::near::types::{Action, NearGas, NearToken, TransferAction, U64};
 use omni_transaction::near::utils::PublicKeyStrExt;
-use omni_transaction::near::types::{Action, TransferAction, U64};
 
 let signer_id = "alice.near";
 let signer_public_key = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
