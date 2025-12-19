@@ -8,9 +8,8 @@ use near_jsonrpc_client::methods::tx::{RpcTransactionError, TransactionInfo};
 use near_jsonrpc_client::{methods, JsonRpcClient};
 use near_primitives::hash::CryptoHash;
 use near_workspaces::sandbox;
-use omni_transaction::near::types::NearToken;
 use omni_transaction::near::types::{
-    Action, ED25519Signature, Signature as OmniSignature, TransferAction,
+    Action, ED25519Signature, NearToken, Signature as OmniSignature, TransferAction,
 };
 use omni_transaction::near::utils::PublicKeyStrExt;
 use omni_transaction::NEAR;
