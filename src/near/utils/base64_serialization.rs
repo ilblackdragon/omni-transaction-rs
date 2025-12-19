@@ -1,4 +1,5 @@
 /// Convenience module to allow annotating a serde structure as base64 bytes.
+#[cfg(feature = "serde")]
 use base64::{engine::general_purpose::STANDARD, Engine};
 
 #[cfg(feature = "serde")]

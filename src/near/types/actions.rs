@@ -1,7 +1,6 @@
-use crate::near::{
-    types::{BlockHash, PublicKey, Signature},
-    utils::base64_serialization,
-};
+use crate::near::types::{BlockHash, PublicKey, Signature};
+#[cfg(feature = "serde")]
+use crate::near::utils::base64_serialization;
 #[cfg(feature = "borsh")]
 use borsh::{BorshDeserialize, BorshSerialize};
 use near_account_id::AccountId;

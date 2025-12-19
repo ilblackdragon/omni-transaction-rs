@@ -17,8 +17,6 @@ use crate::bitcoin::encoding::{Decodable, Encodable};
 
 /// A reference to a transaction output.
 ///
-/// A reference to a transaction output.
-///
 /// ### Serialization
 ///
 /// When both `serde` and `serde_json` features are enabled, OutPoint supports flexible JSON

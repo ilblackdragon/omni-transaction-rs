@@ -79,7 +79,7 @@ impl NearTransaction {
     }
 }
 
-#[cfg(all(test, feature = "borsh", feature = "serde"))]
+#[cfg(all(test, feature = "borsh", feature = "serde", feature = "serde_json"))]
 mod tests {
     use std::str::FromStr;
     use std::sync::Arc;
