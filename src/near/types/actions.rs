@@ -367,21 +367,46 @@ mod tests {
         let action_pairs = get_actions();
 
         for (action, near_primitive_action) in action_pairs {
-            let serialized =
+            // omni Action -> JSON -> omni Action
+            let serialized_action =
                 serde_json::to_string(&action).expect("Failed to serialize action to JSON");
 
-            let deserialized: Action =
-                serde_json::from_str(&serialized).expect("Failed to deserialize action from JSON");
+            let deserialized_action: Action =
+                serde_json::from_str(&serialized_action).expect("Failed to deserialize action from JSON");
 
             assert_eq!(
-                    action, deserialized,
-                    "Serialization/Deserialization mismatch: original action: {action:?}, deserialized action: {deserialized:?}"
+                    action, deserialized_action,
+                    "Serialization/Deserialization mismatch: original action: {action:?}, deserialized action: {deserialized_action:?}"
                 );
 
-            let serialized_near_primitive = serde_json::to_string(&near_primitive_action)
-                .expect("Failed to serialize action to JSON");
+            // omni Action -> JSON -> near-primitives Action
+            let deserialized_near_primitive_action: NearPrimitiveAction =
+                serde_json::from_str(&serialized_action).expect("Failed to deserialize near-primitive action from JSON");
 
-            assert_eq!(serialized, serialized_near_primitive);
+            assert_eq!(
+                    near_primitive_action, deserialized_near_primitive_action,
+                    "Serialization/Deserialization mismatch: original action: {near_primitive_action:?}, deserialized action: {deserialized_near_primitive_action:?}"
+                );
+
+            // near-primitive Action -> JSON -> omni Action
+            let serialized_near_primitive_action = serde_json::to_string(&near_primitive_action)
+                .expect("Failed to serialize near-primitive action to JSON");
+
+            let deserialized_action_2: Action =
+                serde_json::from_str(&serialized_near_primitive_action).expect("Failed to deserialize action from near-primitive JSON");
+
+            assert_eq!(
+                    action, deserialized_action_2,
+                    "Serialization/Deserialization mismatch: original action: {action:?}, deserialized action: {deserialized_action_2:?}"
+                );
+
+            // omni Action (JSON) ~= near-primitives Action (JSON)
+            //
+            // NOTE: nearcore serializes Gas values as JSON numbers for historical reasons, but it
+            // can handle deserialization from both number and string values. NearGas, on the other
+            // hand, serializes the values as JSON string and also can handle both number and
+            // string values on deserialization
+            assert_eq!(serialized_action, serialized_near_primitive_action.replace("\"gas\":1000000", "\"gas\":\"1000000\""));
         }
     }
 

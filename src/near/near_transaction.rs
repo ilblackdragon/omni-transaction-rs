@@ -461,8 +461,14 @@ mod tests {
             let serialized_omni_tx =
                 serde_json::to_string(&omni_tx).expect("failed to serialize Omni transaction");
 
+            // omni Action (JSON) ~= near-primitives Action (JSON)
+            //
+            // NOTE: nearcore serializes Gas values as JSON numbers for historical reasons, but it
+            // can handle deserialization from both number and string values. NearGas, on the other
+            // hand, serializes the values as JSON string and also can handle both number and
+            // string values on deserialization
             assert_eq!(
-                serialized_near_primitive_v0_tx, serialized_omni_tx,
+                serialized_near_primitive_v0_tx.replace("\"gas\":100", "\"gas\":\"100\""), serialized_omni_tx,
                 "Test case {i} failed: serialized transactions do not match.\nNEAR: {serialized_near_primitive_v0_tx:?}\nOmni: {serialized_omni_tx:?}"
             );
         }
@@ -661,7 +667,7 @@ mod tests {
             "receiver_id": "forgetful-parent.testnet",
             "block_hash": "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
             "actions": [
-                { "Transfer": { "deposit": 1 } }
+                { "Transfer": { "deposit": "1" } }
             ]
         }"#;
 
