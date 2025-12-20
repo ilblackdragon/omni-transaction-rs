@@ -125,6 +125,13 @@ impl BorshDeserialize for NearTransaction {
 
         let read_signer_id = |buf: [u8; 4], reader: &mut R| -> std::io::Result<AccountId> {
             let str_len = u32::from_le_bytes(buf);
+            // AccountId max length is 64 bytes - validate to prevent memory exhaustion
+            if str_len > 64 {
+                return Err(Error::new(
+                    ErrorKind::InvalidData,
+                    "AccountId length exceeds maximum of 64 bytes",
+                ));
+            }
             let mut str_vec = Vec::with_capacity(str_len as usize);
             for _ in 0..str_len {
                 str_vec.push(u8::deserialize_reader(reader)?);
@@ -209,10 +216,10 @@ impl NearTransaction {
     }
 
     /// Get the nonce for this transaction
-    pub fn nonce(&self) -> U64 {
+    pub const fn nonce(&self) -> U64 {
         match self {
-            Self::V0(tx) => tx.nonce.clone(),
-            Self::V1(tx) => tx.nonce.clone(),
+            Self::V0(tx) => tx.nonce,
+            Self::V1(tx) => tx.nonce,
         }
     }
 
