@@ -96,8 +96,8 @@ pub enum NearTransaction {
 impl BorshSerialize for NearTransaction {
     fn serialize<W: Write>(&self, writer: &mut W) -> Result<(), Error> {
         match self {
-            NearTransaction::V0(tx) => BorshSerialize::serialize(tx, writer)?,
-            NearTransaction::V1(tx) => {
+            Self::V0(tx) => BorshSerialize::serialize(tx, writer)?,
+            Self::V1(tx) => {
                 BorshSerialize::serialize(&1_u8, writer)?;
                 BorshSerialize::serialize(tx, writer)?;
             }
@@ -130,7 +130,10 @@ impl BorshDeserialize for NearTransaction {
                 str_vec.push(u8::deserialize_reader(reader)?);
             }
             AccountId::try_from(String::from_utf8(str_vec).map_err(|_| {
-                Error::new(ErrorKind::InvalidData, "Failed to parse AccountId from bytes")
+                Error::new(
+                    ErrorKind::InvalidData,
+                    "Failed to parse AccountId from bytes",
+                )
             })?)
             .map_err(|e| Error::new(ErrorKind::InvalidData, e.to_string()))
         };
@@ -142,7 +145,7 @@ impl BorshDeserialize for NearTransaction {
             let receiver_id = AccountId::deserialize_reader(reader)?;
             let block_hash = BlockHash::deserialize_reader(reader)?;
             let actions = Vec::<Action>::deserialize_reader(reader)?;
-            Ok(NearTransaction::V0(TransactionV0 {
+            Ok(Self::V0(TransactionV0 {
                 signer_id,
                 signer_public_key,
                 nonce,
@@ -159,7 +162,7 @@ impl BorshDeserialize for NearTransaction {
             let block_hash = BlockHash::deserialize_reader(reader)?;
             let actions = Vec::<Action>::deserialize_reader(reader)?;
             let priority_fee = u64::deserialize_reader(reader)?;
-            Ok(NearTransaction::V1(TransactionV1 {
+            Ok(Self::V1(TransactionV1 {
                 signer_id,
                 signer_public_key,
                 nonce,
@@ -182,58 +185,58 @@ pub struct SignedTransaction {
 
 impl NearTransaction {
     /// Get the signer_id for this transaction
-    pub fn signer_id(&self) -> &AccountId {
+    pub const fn signer_id(&self) -> &AccountId {
         match self {
-            NearTransaction::V0(tx) => &tx.signer_id,
-            NearTransaction::V1(tx) => &tx.signer_id,
+            Self::V0(tx) => &tx.signer_id,
+            Self::V1(tx) => &tx.signer_id,
         }
     }
 
     /// Get the receiver_id for this transaction
-    pub fn receiver_id(&self) -> &AccountId {
+    pub const fn receiver_id(&self) -> &AccountId {
         match self {
-            NearTransaction::V0(tx) => &tx.receiver_id,
-            NearTransaction::V1(tx) => &tx.receiver_id,
+            Self::V0(tx) => &tx.receiver_id,
+            Self::V1(tx) => &tx.receiver_id,
         }
     }
 
     /// Get the signer_public_key for this transaction
-    pub fn signer_public_key(&self) -> &PublicKey {
+    pub const fn signer_public_key(&self) -> &PublicKey {
         match self {
-            NearTransaction::V0(tx) => &tx.signer_public_key,
-            NearTransaction::V1(tx) => &tx.signer_public_key,
+            Self::V0(tx) => &tx.signer_public_key,
+            Self::V1(tx) => &tx.signer_public_key,
         }
     }
 
     /// Get the nonce for this transaction
     pub fn nonce(&self) -> U64 {
         match self {
-            NearTransaction::V0(tx) => tx.nonce.clone(),
-            NearTransaction::V1(tx) => tx.nonce.clone(),
+            Self::V0(tx) => tx.nonce.clone(),
+            Self::V1(tx) => tx.nonce.clone(),
         }
     }
 
     /// Get the actions for this transaction
     pub fn actions(&self) -> &[Action] {
         match self {
-            NearTransaction::V0(tx) => &tx.actions,
-            NearTransaction::V1(tx) => &tx.actions,
+            Self::V0(tx) => &tx.actions,
+            Self::V1(tx) => &tx.actions,
         }
     }
 
     /// Get the block_hash for this transaction
-    pub fn block_hash(&self) -> &BlockHash {
+    pub const fn block_hash(&self) -> &BlockHash {
         match self {
-            NearTransaction::V0(tx) => &tx.block_hash,
-            NearTransaction::V1(tx) => &tx.block_hash,
+            Self::V0(tx) => &tx.block_hash,
+            Self::V1(tx) => &tx.block_hash,
         }
     }
 
     /// Get the priority_fee for this transaction (None for V0, Some for V1)
-    pub fn priority_fee(&self) -> Option<u64> {
+    pub const fn priority_fee(&self) -> Option<u64> {
         match self {
-            NearTransaction::V0(_) => None,
-            NearTransaction::V1(tx) => Some(tx.priority_fee),
+            Self::V0(_) => None,
+            Self::V1(tx) => Some(tx.priority_fee),
         }
     }
 
