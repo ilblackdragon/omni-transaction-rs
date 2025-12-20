@@ -371,8 +371,8 @@ mod tests {
             let serialized_action =
                 serde_json::to_string(&action).expect("Failed to serialize action to JSON");
 
-            let deserialized_action: Action =
-                serde_json::from_str(&serialized_action).expect("Failed to deserialize action from JSON");
+            let deserialized_action: Action = serde_json::from_str(&serialized_action)
+                .expect("Failed to deserialize action from JSON");
 
             assert_eq!(
                     action, deserialized_action,
@@ -381,7 +381,8 @@ mod tests {
 
             // omni Action -> JSON -> near-primitives Action
             let deserialized_near_primitive_action: NearPrimitiveAction =
-                serde_json::from_str(&serialized_action).expect("Failed to deserialize near-primitive action from JSON");
+                serde_json::from_str(&serialized_action)
+                    .expect("Failed to deserialize near-primitive action from JSON");
 
             assert_eq!(
                     near_primitive_action, deserialized_near_primitive_action,
@@ -393,7 +394,8 @@ mod tests {
                 .expect("Failed to serialize near-primitive action to JSON");
 
             let deserialized_action_2: Action =
-                serde_json::from_str(&serialized_near_primitive_action).expect("Failed to deserialize action from near-primitive JSON");
+                serde_json::from_str(&serialized_near_primitive_action)
+                    .expect("Failed to deserialize action from near-primitive JSON");
 
             assert_eq!(
                     action, deserialized_action_2,
@@ -406,7 +408,10 @@ mod tests {
             // can handle deserialization from both number and string values. NearGas, on the other
             // hand, serializes the values as JSON string and also can handle both number and
             // string values on deserialization
-            assert_eq!(serialized_action, serialized_near_primitive_action.replace("\"gas\":1000000", "\"gas\":\"1000000\""));
+            assert_eq!(
+                serialized_action,
+                serialized_near_primitive_action.replace("\"gas\":1000000", "\"gas\":\"1000000\"")
+            );
         }
     }
 
