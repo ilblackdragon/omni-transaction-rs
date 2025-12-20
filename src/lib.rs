@@ -25,14 +25,15 @@
 //! # let _ = {
 //! use omni_transaction::{TransactionBuilder, TxBuilder, NEAR};
 //! use omni_transaction::near::utils::PublicKeyStrExt;
-//! use omni_transaction::near::types::{Action, TransferAction, U128};
+//! use omni_transaction::near::types::{Action, TransferAction};
+//! use omni_transaction::near::types::NearToken;
 //!
 //! let signer_id = "alice.near";
 //! let signer_public_key = "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp";
 //! let nonce = 0;
 //! let receiver_id = "bob.near";
 //! let block_hash_str = "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ";
-//! let transfer_action = Action::Transfer(TransferAction { deposit: U128(1) });
+//! let transfer_action = Action::Transfer(TransferAction { deposit: NearToken::from_yoctonear(1) });
 //! let actions = vec![transfer_action];
 //!
 //! let near_tx = TransactionBuilder::new::<NEAR>()

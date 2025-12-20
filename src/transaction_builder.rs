@@ -33,8 +33,8 @@ mod tests {
     #[cfg(feature = "near")]
     fn test_near_transaction_builder_typed() {
         use crate::near::types::{
-            Action as OmniAction, BlockHash, PublicKey as OmniPublicKey,
-            TransferAction as OmniTransferAction, U128,
+            Action as OmniAction, BlockHash, NearToken, PublicKey as OmniPublicKey,
+            TransferAction as OmniTransferAction,
         };
         use crate::transaction_builders::NEAR;
 
@@ -49,7 +49,9 @@ mod tests {
         let nonce = 0;
         let receiver_id: &str = "bob.near";
         let block_hash = BlockHash([0u8; 32]);
-        let transfer_action = OmniAction::Transfer(OmniTransferAction { deposit: U128(1) });
+        let transfer_action = OmniAction::Transfer(OmniTransferAction {
+            deposit: NearToken::from_yoctonear(1),
+        });
         let omni_actions = vec![transfer_action];
         let actions = Action::Transfer(TransferAction {
             deposit: Balance::from_yoctonear(1),

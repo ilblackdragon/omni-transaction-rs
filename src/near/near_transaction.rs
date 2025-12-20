@@ -282,10 +282,11 @@ mod tests {
         DeployGlobalContractAction as OmniDeployGlobalContractAction, ED25519Signature,
         FunctionCallAction as OmniFunctionCallAction,
         GlobalContractDeployMode as OmniGlobalContractDeployMode,
-        GlobalContractIdentifier as OmniGlobalContractIdentifier, Secp256K1Signature,
-        Signature as OmniSignature, SignedDelegateAction as OmniSignedDelegateAction,
-        StakeAction as OmniStakeAction, TransferAction as OmniTransferAction,
-        UseGlobalContractAction as OmniUseGlobalContractAction, U128,
+        GlobalContractIdentifier as OmniGlobalContractIdentifier, NearGas, NearToken,
+        Secp256K1Signature, Signature as OmniSignature,
+        SignedDelegateAction as OmniSignedDelegateAction, StakeAction as OmniStakeAction,
+        TransferAction as OmniTransferAction,
+        UseGlobalContractAction as OmniUseGlobalContractAction,
     };
     use crate::near::utils::PublicKeyStrExt;
     use near_crypto::{ED25519PublicKey, PublicKey, Signature};
@@ -363,8 +364,8 @@ mod tests {
                 omni_actions: vec![OmniAction::FunctionCall(Box::new(OmniFunctionCallAction {
                     method_name: "function1".to_string(),
                     args: vec![0x01, 0x02, 0x03],
-                    gas: U64(100),
-                    deposit: U128(1),
+                    gas: NearGas::from_gas(100),
+                    deposit: NearToken::from_yoctonear(1),
                 }))],
             },
             // Transfer
@@ -376,7 +377,7 @@ mod tests {
                 block_hash: "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
                 near_primitive_actions: vec![Action::Transfer(TransferAction { deposit: Balance::from_yoctonear(1) })],
                 omni_actions: vec![OmniAction::Transfer(OmniTransferAction {
-                    deposit: U128(1),
+                    deposit: NearToken::from_yoctonear(1),
                 })],
             },
             // Stake
@@ -395,7 +396,7 @@ mod tests {
                     )),
                 }))],
                 omni_actions: vec![OmniAction::Stake(Box::new(OmniStakeAction {
-                    stake: U128(1),
+                    stake: NearToken::from_yoctonear(1),
                     public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                         .to_public_key()
                         .unwrap(),
@@ -551,7 +552,7 @@ mod tests {
                     })),
                 ],
                 omni_actions: vec![
-                    OmniAction::Transfer(OmniTransferAction { deposit: U128(1) }),
+                    OmniAction::Transfer(OmniTransferAction { deposit: NearToken::from_yoctonear(1) }),
                     OmniAction::AddKey(Box::new(OmniAddKeyAction {
                         public_key: "ed25519:6E8sCci9badyRkXb3JoRpBj5p8C6Tw41ELDZoiihKEtp"
                             .to_public_key()
@@ -644,8 +645,14 @@ mod tests {
             let serialized_omni_tx =
                 serde_json::to_string(&omni_tx).expect("failed to serialize Omni transaction");
 
+            // omni Action (JSON) ~= near-primitives Action (JSON)
+            //
+            // NOTE: nearcore serializes Gas values as JSON numbers for historical reasons, but it
+            // can handle deserialization from both number and string values. NearGas, on the other
+            // hand, serializes the values as JSON string and also can handle both number and
+            // string values on deserialization
             assert_eq!(
-                serialized_near_primitive_v0_tx, serialized_omni_tx,
+                serialized_near_primitive_v0_tx.replace("\"gas\":100", "\"gas\":\"100\""), serialized_omni_tx,
                 "Test case {i} failed: serialized transactions do not match.\nNEAR: {serialized_near_primitive_v0_tx:?}\nOmni: {serialized_omni_tx:?}"
             );
         }
@@ -844,7 +851,7 @@ mod tests {
             "receiver_id": "forgetful-parent.testnet",
             "block_hash": "4reLvkAWfqk5fsqio1KLudk46cqRz9erQdaHkWZKMJDZ",
             "actions": [
-                { "Transfer": { "deposit": 1 } }
+                { "Transfer": { "deposit": "1" } }
             ]
         }"#;
 

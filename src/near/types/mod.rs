@@ -10,3 +10,6 @@ pub use block_hash::*;
 pub use integers::*;
 pub use public_key::*;
 pub use signature::*;
+
+// Re-export commonly used types for convenience
+pub use near_account_id::{AccountId, AccountIdRef};
