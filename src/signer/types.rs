@@ -66,6 +66,13 @@ pub enum Payload {
     Eddsa(String),
 }
 
+/// Hex-encoded ECDSA payload length (32 bytes = 64 hex characters)
+const ECDSA_HEX_LEN: usize = 64;
+/// Minimum hex-encoded EdDSA payload length (32 bytes = 64 hex characters)
+const MIN_EDDSA_HEX_LEN: usize = 64;
+/// Maximum hex-encoded EdDSA payload length (1232 bytes = 2464 hex characters)
+const MAX_EDDSA_HEX_LEN: usize = 2464;
+
 impl Payload {
     /// Create an ECDSA payload from legacy 32-byte array
     pub fn from_legacy_ecdsa(bytes: [u8; 32]) -> Self {
@@ -104,17 +111,20 @@ impl SignRequestArgs {
     pub fn validate_payload_length(&self) -> Result<(), String> {
         match &self.payload_v2 {
             Payload::Ecdsa(hex) => {
-                if hex.len() != 64 {
-                    return Err("Ecdsa payload must be 64 hex characters (32 bytes)".to_string());
+                if hex.len() != ECDSA_HEX_LEN {
+                    return Err(format!(
+                        "Ecdsa payload must be {} hex characters (32 bytes)",
+                        ECDSA_HEX_LEN
+                    ));
                 }
                 Ok(())
             }
             Payload::Eddsa(hex) => {
-                if hex.len() < 64 || hex.len() > 2464 {
-                    return Err(
-                        "Eddsa payload must be between 64 and 2464 hex characters (32-1232 bytes)"
-                            .to_string(),
-                    );
+                if hex.len() < MIN_EDDSA_HEX_LEN || hex.len() > MAX_EDDSA_HEX_LEN {
+                    return Err(format!(
+                        "Eddsa payload must be between {} and {} hex characters (32-1232 bytes)",
+                        MIN_EDDSA_HEX_LEN, MAX_EDDSA_HEX_LEN
+                    ));
                 }
                 Ok(())
             }
