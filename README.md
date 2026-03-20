@@ -120,6 +120,40 @@ let evm_tx = TransactionBuilder::new::<EVM>()
 let rlp_encoded = evm_tx.build_for_signing();
 ```
 
+### Preflight simulation (optional)
+
+Before requesting a Chain Signatures MPC signature, you can simulate the EVM
+transaction against forked chain state to avoid wasting signing gas on
+transactions that would revert:
+
+```toml
+[dependencies]
+near-evm-sim = "0.1"
+```
+
+```rust
+use near_evm_sim::{simulate, SimConfig, BlockSpec};
+
+let sender = [0xAB; 20]; // Chain Signatures derived address
+let config = SimConfig {
+    rpc_url: "https://ethereum-rpc.publicnode.com".into(),
+    chain_id: 1,
+    block: BlockSpec::Latest,
+    spec_id: None,
+};
+
+let result = simulate(&evm_tx, sender, &config).unwrap();
+if result.success {
+    // safe to sign
+    let rlp_encoded = evm_tx.build_for_signing();
+} else {
+    eprintln!("would revert: {}", result.revert_reason.unwrap_or_default());
+}
+```
+
+See [near-evm-sim](https://crates.io/crates/near-evm-sim) for batch simulation,
+revert decoding, and multi-chain support.
+
 Building a Bitcoin transaction:
 
 ```rust
