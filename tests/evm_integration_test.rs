@@ -38,9 +38,8 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_evm()
     // Create a provider with the wallet.
     let rpc_url = anvil.endpoint().parse()?;
     let provider = ProviderBuilder::new()
-        .with_recommended_fillers()
         .wallet(wallet.clone())
-        .on_http(rpc_url);
+        .connect_http(rpc_url);
 
     let signer_balance = provider.get_balance(signer.address()).await?;
 
@@ -70,7 +69,7 @@ async fn test_send_raw_transaction_created_with_omnitransactionbuilder_for_evm()
     let signature = signer.sign_hash(&omni_evm_tx_hash).await?;
 
     let signature_omni: OmniSignature = OmniSignature {
-        v: signature.v().to_u64(),
+        v: u64::from(signature.v()),
         r: signature.r().to_be_bytes::<32>().to_vec(),
         s: signature.s().to_be_bytes::<32>().to_vec(),
     };

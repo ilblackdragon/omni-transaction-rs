@@ -21,7 +21,7 @@ use std::fmt;
 ///
 /// const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
 /// const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
-/// const GAS_LIMIT: u128 = 21_000;
+/// const GAS_LIMIT: u64 = 21_000;
 ///
 /// let nonce: u64 = 0;
 /// let to: Address = address!("d8dA6BF26964aF9D7eEd9e03E53415D37aA96045").into();
@@ -37,7 +37,7 @@ use std::fmt;
 ///     to: to_address,
 ///     value,
 ///     input: data.clone(),
-///     gas_limit: GAS_LIMIT,
+///     gas_limit: GAS_LIMIT.into(),
 ///     max_fee_per_gas: MAX_FEE_PER_GAS,
 ///     max_priority_fee_per_gas: MAX_PRIORITY_FEE_PER_GAS,
 ///     access_list: vec![],
@@ -339,7 +339,7 @@ mod tests {
     }
 
     use alloy::{
-        consensus::{SignableTransaction, TxEip1559},
+        consensus::{transaction::RlpEcdsaEncodableTx, SignableTransaction, TxEip1559},
         network::TransactionBuilder,
         primitives::{address, hex, Address, Bytes, U256},
         rpc::types::{AccessList, TransactionRequest},
@@ -350,7 +350,7 @@ mod tests {
     use crate::evm::{evm_transaction::EVMTransaction, utils::parse_eth_address};
     const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
     const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
-    const GAS_LIMIT: u128 = 21_000;
+    const GAS_LIMIT: u64 = 21_000;
 
     #[test]
     fn test_build_for_signing_for_evm_against_alloy() {
@@ -369,7 +369,7 @@ mod tests {
             to: to_address,
             value,
             input: data.clone(),
-            gas_limit: GAS_LIMIT,
+            gas_limit: GAS_LIMIT.into(),
             max_fee_per_gas: MAX_FEE_PER_GAS,
             max_priority_fee_per_gas: MAX_PRIORITY_FEE_PER_GAS,
             access_list: vec![],
@@ -389,7 +389,7 @@ mod tests {
             .with_input(data);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
-            .build_unsigned()
+            .build_typed_tx()
             .expect("Failed to build unsigned transaction");
 
         let rlp_encoded = alloy_rlp_bytes.eip1559().unwrap();
@@ -418,7 +418,7 @@ mod tests {
             to: to_address,
             value,
             input: input.to_vec(),
-            gas_limit: GAS_LIMIT,
+            gas_limit: GAS_LIMIT.into(),
             max_fee_per_gas: MAX_FEE_PER_GAS,
             max_priority_fee_per_gas: MAX_PRIORITY_FEE_PER_GAS,
             access_list: vec![],
@@ -439,7 +439,7 @@ mod tests {
             .with_input(input);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
-            .build_unsigned()
+            .build_typed_tx()
             .expect("Failed to build unsigned transaction");
 
         let rlp_encoded = alloy_rlp_bytes.eip1559().unwrap();
@@ -455,7 +455,7 @@ mod tests {
     fn test_build_with_signature_for_evm_against_alloy() {
         let chain_id = 1;
         let nonce = 0x42;
-        let gas_limit = 44386;
+        let gas_limit: u64 = 44386;
 
         let to_str = "6069a6c32cf691f5982febae4faf8a6f3ab2f0f6";
         let to = address!("6069a6c32cf691f5982febae4faf8a6f3ab2f0f6").into();
@@ -489,7 +489,7 @@ mod tests {
             to: to_address,
             value: value_as_128,
             input: input.to_vec(),
-            gas_limit,
+            gas_limit: gas_limit.into(),
             max_fee_per_gas,
             max_priority_fee_per_gas,
             access_list: vec![],
@@ -503,14 +503,13 @@ mod tests {
             b256!("840cfc572845f5786e702984c2a582528cad4b49b2a10b9db1be7fca90058565"),
             b256!("25e7109ceb98168d95b09b18bbf6b685130e0562f233877d492b94eee0c5b6d1"),
             false,
-        )
-        .unwrap();
+        );
 
         let mut tx_encoded_with_signature: Vec<u8> = vec![];
-        tx.encode_with_signature(&sig, &mut tx_encoded_with_signature, false);
+        tx.eip2718_encode(&sig, &mut tx_encoded_with_signature);
 
         let signature: OmniSignature = OmniSignature {
-            v: sig.v().to_u64(),
+            v: u64::from(sig.v()),
             r: sig.r().to_be_bytes::<32>().to_vec(),
             s: sig.s().to_be_bytes::<32>().to_vec(),
         };

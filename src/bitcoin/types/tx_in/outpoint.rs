@@ -7,6 +7,7 @@ use schemars::JsonSchema;
 #[cfg(feature = "serde")]
 use serde::{de::MapAccess, Deserialize, Deserializer, Serialize};
 
+#[cfg(any(feature = "serde", test))]
 use super::hash::Hash;
 use super::tx_id::Txid;
 

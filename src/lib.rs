@@ -5,8 +5,14 @@
 //!
 //! ### Supported chains:
 //! - NEAR
-//! - EVM chains (including Ethereum and L2s)
+//! - EVM chains (including Ethereum, Arbitrum, Base, BNB, Polygon, HyperEVM, Abstract and other L2s)
 //! - Bitcoin
+//! - Solana (and other SVM chains such as Fogo)
+//! - Aptos
+//! - Sui
+//! - Zcash (transparent transactions)
+//! - Starknet
+//! - TON
 //!
 //! ### Installation
 //! ```toml
@@ -136,6 +142,12 @@
 //! - bitcoin
 //! - evm
 //! - near
+//! - solana
+//! - aptos
+//! - sui
+//! - zcash
+//! - starknet
+//! - ton
 //!
 //! By default 'all' the features are enabled. However, you can customize the behaviour like this:
 //!
@@ -150,6 +162,10 @@
 //! omni-transaction = { version = "0.3", features = ["evm"] }
 //! ```
 //!
+#[cfg(feature = "aptos")]
+pub mod aptos;
+#[cfg(any(feature = "aptos", feature = "sui"))]
+pub(crate) mod bcs_encoding;
 #[cfg(feature = "bitcoin")]
 pub mod bitcoin;
 mod constants;
@@ -158,10 +174,23 @@ pub mod evm;
 #[cfg(feature = "near")]
 pub mod near;
 pub mod signer;
+#[cfg(feature = "solana")]
+pub mod solana;
+#[cfg(feature = "starknet")]
+pub mod starknet;
+#[cfg(feature = "sui")]
+pub mod sui;
+#[cfg(feature = "ton")]
+pub mod ton;
 mod transaction_builder;
 mod transaction_builders;
+#[cfg(feature = "zcash")]
+pub mod zcash;
 
 pub use transaction_builder::{TransactionBuilder, TxBuilder};
+/// Alias for AptosTransactionBuilder
+#[cfg(feature = "aptos")]
+pub use transaction_builders::APTOS;
 /// Alias for BitcoinTransactionBuilder
 #[cfg(feature = "bitcoin")]
 pub use transaction_builders::BITCOIN;
@@ -171,3 +200,18 @@ pub use transaction_builders::EVM;
 /// Alias for NearTransactionBuilder
 #[cfg(feature = "near")]
 pub use transaction_builders::NEAR;
+/// Alias for SolanaTransactionBuilder
+#[cfg(feature = "solana")]
+pub use transaction_builders::SOLANA;
+/// Alias for StarknetTransactionBuilder
+#[cfg(feature = "starknet")]
+pub use transaction_builders::STARKNET;
+/// Alias for SuiTransactionBuilder
+#[cfg(feature = "sui")]
+pub use transaction_builders::SUI;
+/// Alias for TonTransactionBuilder
+#[cfg(feature = "ton")]
+pub use transaction_builders::TON;
+/// Alias for ZcashTransactionBuilder
+#[cfg(feature = "zcash")]
+pub use transaction_builders::ZCASH;

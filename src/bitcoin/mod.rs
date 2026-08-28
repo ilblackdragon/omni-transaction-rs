@@ -2,7 +2,7 @@
 mod bitcoin_transaction;
 mod bitcoin_transaction_builder;
 mod constants;
-mod encoding;
+pub(crate) mod encoding;
 pub mod types;
 pub mod utils;
 

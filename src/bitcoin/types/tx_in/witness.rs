@@ -256,6 +256,7 @@ fn resize_if_needed(vec: &mut Vec<u8>, required_len: usize) {
     }
 }
 
+#[cfg(feature = "serde")]
 pub struct SerializeBytesAsHex<'a>(pub(crate) &'a [u8]);
 
 #[cfg(feature = "serde")]

@@ -126,7 +126,7 @@ mod tests {
 
     const MAX_FEE_PER_GAS: u128 = 20_000_000_000;
     const MAX_PRIORITY_FEE_PER_GAS: u128 = 1_000_000_000;
-    const GAS_LIMIT: u128 = 21_000;
+    const GAS_LIMIT: u64 = 21_000;
 
     #[test]
     fn test_evm_transaction_builder_against_alloy() {
@@ -144,7 +144,7 @@ mod tests {
             .nonce(nonce)
             .max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)
             .max_fee_per_gas(MAX_FEE_PER_GAS)
-            .gas_limit(GAS_LIMIT)
+            .gas_limit(GAS_LIMIT.into())
             .to(to_address)
             .value(value)
             .input(data.clone())
@@ -165,7 +165,7 @@ mod tests {
             .with_input(data);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
-            .build_unsigned()
+            .build_typed_tx()
             .expect("Failed to build unsigned transaction");
 
         let rlp_encoded = alloy_rlp_bytes.eip1559().unwrap();
@@ -192,7 +192,7 @@ mod tests {
             .nonce(nonce)
             .max_priority_fee_per_gas(MAX_PRIORITY_FEE_PER_GAS)
             .max_fee_per_gas(MAX_FEE_PER_GAS)
-            .gas_limit(GAS_LIMIT)
+            .gas_limit(GAS_LIMIT.into())
             .to(to_address)
             .value(value)
             .input(input.to_vec())
@@ -214,7 +214,7 @@ mod tests {
             .with_input(input);
 
         let alloy_rlp_bytes: alloy::consensus::TypedTransaction = alloy_tx
-            .build_unsigned()
+            .build_typed_tx()
             .expect("Failed to build unsigned transaction");
 
         let rlp_encoded = alloy_rlp_bytes.eip1559().unwrap();
